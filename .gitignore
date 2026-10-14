@@ -1,0 +1,5 @@
+stage3-*.tar.xz
+.superpowers/
+.venv/
+__pycache__/
+*.py[cod]
