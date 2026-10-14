@@ -13,8 +13,14 @@ separately protected WD_BLACK SN8100.
 - `install storage` / `resume storage`: checkpointed encrypted Btrfs preparation
 - `verify-stage3` / `install stage3`: signature and checksum verification, then
   extraction into the verified encrypted Btrfs root
-- Gentoo chroot configuration, kernel/UKI, desktop, applications, recovery
-  validation, and physical reboot remain to be implemented
+- `configure`: stable KDE/systemd profile, Portage, fstab, encrypted-root UKI,
+  locale, timezone, and hostname setup
+- `install packages`: base kernel/boot and KDE/audio stages, followed by
+  separately gated gaming, development, virtualization, and backup groups
+- `install user`: desktop-gated local account creation with an interactive
+  password prompt
+- Production boot, hardware runtime checks, QEMU install rehearsal, recovery
+  restore, and physical deployment remain unverified
 
 The commands that partition or format storage are available only in the Gentoo
 Linux live environment. They fail on Windows. Review

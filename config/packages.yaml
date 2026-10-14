@@ -1,0 +1,73 @@
+{
+  "profile_release": "23.0",
+  "desktop_profile": "default/linux/amd64/23.0/desktop/kde/systemd",
+  "global_use": ["X", "wayland", "vulkan"],
+  "video_cards": ["amdgpu", "radeonsi"],
+  "package_use": [
+    ["sys-apps/systemd", "boot", "ukify"],
+    ["sys-kernel/installkernel", "dracut", "systemd-boot", "ukify", "uki"]
+  ],
+  "sets": {
+    "base": [
+      "app-admin/sudo",
+      "app-editors/neovim",
+      "app-shells/bash-completion",
+      "net-firewall/nftables",
+      "net-misc/networkmanager",
+      "sys-apps/pciutils",
+      "sys-apps/usbutils",
+      "sys-firmware/linux-firmware",
+      "sys-fs/btrfs-progs",
+      "sys-fs/cryptsetup",
+      "sys-kernel/dracut",
+      "sys-kernel/gentoo-kernel-bin",
+      "sys-kernel/installkernel",
+      "sys-process/htop"
+    ],
+    "desktop": [
+      "kde-plasma/plasma-meta",
+      "kde-plasma/sddm",
+      "media-video/pipewire",
+      "media-video/wireplumber",
+      "media-sound/alsa-utils",
+      "media-libs/mesa",
+      "media-libs/vulkan-loader",
+      "net-misc/networkmanager-applet",
+      "sys-apps/zram-generator"
+    ],
+    "gaming": [
+      "games-util/steam-launcher",
+      "games-util/gamemode",
+      "gui-wm/gamescope"
+    ],
+    "development": [
+      "dev-build/cmake",
+      "dev-build/ninja",
+      "dev-lang/go",
+      "net-libs/nodejs",
+      "dev-lang/python",
+      "dev-lang/rust",
+      "dev-vcs/git",
+      "dev-debug/bpftrace",
+      "llvm-core/clang",
+      "llvm-core/lldb",
+      "dev-util/bpftool",
+      "sys-devel/gcc",
+      "sys-devel/gdb",
+      "sys-devel/binutils",
+      "dev-util/perf"
+    ],
+    "virtualization": [
+      "app-emulation/libvirt",
+      "app-emulation/qemu",
+      "app-emulation/virt-manager",
+      "app-containers/distrobox",
+      "app-containers/podman",
+      "sys-firmware/edk2"
+    ],
+    "security_backup": [
+      "app-backup/restic",
+      "net-firewall/nftables"
+    ]
+  }
+}

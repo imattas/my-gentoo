@@ -1,0 +1,15 @@
+{
+  "production_package": "sys-kernel/gentoo-kernel-bin",
+  "experimental_package": "sys-kernel/gentoo-sources",
+  "initramfs_generator": "dracut",
+  "uki_generator": "ukify",
+  "uki": true,
+  "bootloader": "systemd-boot",
+  "efi_mount": "/efi",
+  "root_mapper": "/dev/mapper/gentoo-root",
+  "root_subvolume": "@",
+  "crypt_kernel_argument": "rd.luks.name={luks_uuid}=gentoo-root",
+  "root_kernel_argument": "root=/dev/mapper/gentoo-root rootflags=subvol=@ rw",
+  "secure_boot": "deferred-until-signing-and-recovery-verified",
+  "experimental_entry": "must-not-replace-production-uki"
+}

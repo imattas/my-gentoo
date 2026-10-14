@@ -104,3 +104,66 @@ python3 -m installer.cli install stage3 \
   --storage-plan /mnt/recovery/gentoo-storage-plan.json \
   --state-dir /mnt/recovery
 ```
+
+## Base system, kernel, and desktop
+
+After Stage 3 extraction, configure the profile and base files. The tool confirms
+the exact mounted EFI/root filesystems, reads the LUKS, Btrfs, and EFI UUIDs,
+checks that GCC accepts `znver4`, then writes Portage settings, `/etc/fstab`,
+locale, timezone, hostname, dracut, and kernel command-line configuration.
+These values can be changed through the command options:
+
+```bash
+python3 -m installer.cli configure \
+  --storage-plan /mnt/recovery/gentoo-storage-plan.json \
+  --state-dir /mnt/recovery \
+  --timezone America/New_York \
+  --locale en_US.UTF-8 \
+  --hostname gentoo-workstation
+```
+
+Install the distribution-managed kernel and baseline tools, then KDE and audio
+with separate Portage stages. Portage's `--ask` prompt presents the dependency
+plan before each package operation. The base stage installs systemd-boot into
+the ESP without writing UEFI NVRAM variables, then requires both the bootloader
+and a production UKI to exist before it records success.
+
+```bash
+python3 -m installer.cli install packages --set base \
+  --storage-plan /mnt/recovery/gentoo-storage-plan.json \
+  --state-dir /mnt/recovery
+python3 -m installer.cli install packages --set desktop \
+  --storage-plan /mnt/recovery/gentoo-storage-plan.json \
+  --state-dir /mnt/recovery
+```
+
+Gaming, development, virtualization, and backup packages are separate sets:
+run the same command with `--set gaming`, `development`, `virtualization`, or
+`security_backup` after the desktop set succeeds. The Steam client comes from
+Gentoo's separate `steam-overlay`; enable and review that repository in the
+target chroot before running the gaming set. For example, from the live system,
+run `chroot /mnt/gentoo eselect repository enable steam-overlay` followed by
+`chroot /mnt/gentoo emerge --sync`, then review the overlay's Steam ebuild and
+Portage changes before continuing. MangoHud and Nix are not in the current main
+Gentoo repository, so this installer does not add third-party overlays or run
+upstream installers for them. Gentoo may stop at a license,
+keyword, or USE-flag decision; review Portage's proposed changes and resolve
+those deliberately. The global profile stays stable; the config does not enable
+`~amd64` packages by default.
+
+Create the interactive login after the desktop stage. The password is entered
+through `passwd`'s terminal prompt; it is never passed in command arguments or
+written to installer state:
+
+```bash
+python3 -m installer.cli install user \
+  --username <your-linux-login> \
+  --storage-plan /mnt/recovery/gentoo-storage-plan.json \
+  --state-dir /mnt/recovery
+```
+
+The base configuration uses the stable KDE/systemd desktop profile for the
+Stage 3 release, explicit AMD `VIDEO_CARDS`, 32-bit ABI support, and a
+memory-bounded build job count. The production kernel is `gentoo-kernel-bin`;
+the custom experimental kernel and Secure Boot signing remain separate work.
+The physical reboot and first actual unlock/boot remain operator-controlled.

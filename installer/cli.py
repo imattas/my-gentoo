@@ -13,6 +13,9 @@ from installer.discovery.host import inspect_host
 from installer.planning.storage import plan_hash_matches, render_storage_plan, validate_storage_plan
 from installer.stages.storage import apply_storage_plan
 from installer.stages.stage3 import extract_verified_stage3, verify_root_mapping, verify_stage3
+from installer.stages.base import configure_base_system
+from installer.provisioning.packages import PACKAGE_SETS, run_package_stage
+from installer.stages.user import setup_user
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -64,6 +67,14 @@ def main(argv: list[str] | None = None) -> int:
         stage3_parser.add_argument(
             "--keyring", type=Path, default=Path("/usr/share/openpgp-keys/gentoo-release.asc")
         )
+        packages_parser = stages.add_parser("packages")
+        packages_parser.add_argument("--set", dest="package_set", required=True, choices=PACKAGE_SETS)
+        packages_parser.add_argument("--storage-plan", required=True, type=Path)
+        packages_parser.add_argument("--state-dir", required=True, type=Path)
+        user_parser = stages.add_parser("user")
+        user_parser.add_argument("--username", required=True)
+        user_parser.add_argument("--storage-plan", required=True, type=Path)
+        user_parser.add_argument("--state-dir", required=True, type=Path)
     stage3_parser = commands.add_parser(
         "verify-stage3", help="verify the pinned Stage 3 signatures and SHA512"
     )
@@ -73,6 +84,14 @@ def main(argv: list[str] | None = None) -> int:
     stage3_parser.add_argument(
         "--keyring", type=Path, default=Path("/usr/share/openpgp-keys/gentoo-release.asc")
     )
+    configure_parser = commands.add_parser(
+        "configure", help="configure Portage, encrypted-root boot, locale, and hostname"
+    )
+    configure_parser.add_argument("--storage-plan", required=True, type=Path)
+    configure_parser.add_argument("--state-dir", required=True, type=Path)
+    configure_parser.add_argument("--timezone", default="America/New_York")
+    configure_parser.add_argument("--locale", default="en_US.UTF-8")
+    configure_parser.add_argument("--hostname", default="gentoo-workstation")
     args = parser.parse_args(argv)
 
     if args.command == "inspect":
@@ -90,7 +109,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 2
         return 0
-    if args.command in {"plan", "validate", "authorize", "install", "resume", "verify-stage3"}:
+    if args.command in {"plan", "validate", "authorize", "install", "resume", "verify-stage3", "configure"}:
         try:
             config = load_config()
             if args.command == "plan":
@@ -110,6 +129,29 @@ def main(argv: list[str] | None = None) -> int:
                 print(json.dumps(result, indent=2))
                 return 0
 
+            if args.command == "configure":
+                storage_plan = json.loads(args.storage_plan.read_text(encoding="utf-8"))
+                package_config = json.loads(
+                    (ROOT / "config" / "packages.yaml").read_text(encoding="utf-8")
+                )
+                kernel_config = json.loads(
+                    (ROOT / "config" / "kernel.yaml").read_text(encoding="utf-8")
+                )
+                report = inspect_host(config)
+                result = configure_base_system(
+                    storage_plan,
+                    args.state_dir,
+                    config,
+                    package_config,
+                    kernel_config,
+                    timezone=args.timezone,
+                    locale=args.locale,
+                    hostname=args.hostname,
+                    report=report,
+                )
+                print(json.dumps(result, indent=2))
+                return 0
+
             if args.command in {"install", "resume"}:
                 if args.stage == "storage":
                     plan = json.loads(args.plan.read_text(encoding="utf-8"))
@@ -126,6 +168,32 @@ def main(argv: list[str] | None = None) -> int:
                         erasure_phrase=args.confirm_erasure,
                         backup_verified=args.backup_verified,
                         recovery_media_verified=args.recovery_media_verified,
+                    )
+                    print(json.dumps(result, indent=2))
+                    return 0
+
+                if args.stage == "packages":
+                    storage_plan = json.loads(args.storage_plan.read_text(encoding="utf-8"))
+                    package_config = json.loads(
+                        (ROOT / "config" / "packages.yaml").read_text(encoding="utf-8")
+                    )
+                    result = run_package_stage(
+                        args.package_set,
+                        package_config,
+                        storage_plan,
+                        args.state_dir,
+                        config,
+                    )
+                    print(json.dumps(result, indent=2))
+                    return 0
+
+                if args.stage == "user":
+                    storage_plan = json.loads(args.storage_plan.read_text(encoding="utf-8"))
+                    result = setup_user(
+                        args.username,
+                        storage_plan,
+                        args.state_dir,
+                        config,
                     )
                     print(json.dumps(result, indent=2))
                     return 0
