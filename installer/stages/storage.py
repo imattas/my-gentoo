@@ -79,11 +79,11 @@ def assert_state_device_is_unprotected(
     paths = {realpath(row.get("path", "")) for row in ancestors if row.get("path")}
     if target_real_path in paths:
         raise RuntimeError("state directory resides on the target disk")
-    serials = {row.get("serial", "").strip() for row in ancestors}
+    serials = {str(row.get("serial") or "").strip() for row in ancestors}
     if serials.intersection(protected_serials):
         raise RuntimeError("state directory resides on a separately protected workstation disk")
     disks = [row for row in ancestors if row.get("type") == "disk"]
-    if not disks or any(not row.get("serial", "").strip() for row in disks):
+    if not disks or any(not str(row.get("serial") or "").strip() for row in disks):
         raise RuntimeError("cannot prove state storage is outside the protected workstation disks")
 
 
@@ -100,8 +100,8 @@ def _exact_device_state(report: dict[str, Any], plan: dict[str, Any]) -> dict[st
         device
         for device in report.get("block_devices", [])
         if device.get("type") == "disk"
-        and device.get("model", "").strip() == target["model"]
-        and device.get("serial", "").strip() == target["serial"]
+        and str(device.get("model") or "").strip() == target["model"]
+        and str(device.get("serial") or "").strip() == target["serial"]
         and target["by_id"] in device.get("by_id", [])
     ]
     if len(matches) != 1:
@@ -109,6 +109,77 @@ def _exact_device_state(report: dict[str, Any], plan: dict[str, Any]) -> dict[st
     if matches[0].get("path") != target.get("observed_device_path"):
         raise RuntimeError("authorized by-id path resolves to a different kernel device")
     return _disk_state(matches[0])
+
+
+def _assert_target_identity(state: dict[str, Any], plan: dict[str, Any]) -> None:
+    target = plan["target"]
+    observed = plan["observed_state"]
+    if any(
+        state.get(field) != expected
+        for field, expected in (
+            ("path", target["observed_device_path"]),
+            ("model", target["model"]),
+            ("serial", target["serial"]),
+            ("size_bytes", observed["size_bytes"]),
+        )
+    ):
+        raise RuntimeError("target identity changed during partition-table discovery")
+
+
+def _assert_empty_partition_table(state: dict[str, Any], plan: dict[str, Any]) -> None:
+    _assert_target_identity(state, plan)
+    if state.get("partition_table") or state.get("children") or state.get("mountpoints"):
+        raise RuntimeError("target is not in the expected blank state after the authorized wipe")
+
+
+def _assert_expected_partition_table(
+    state: dict[str, Any], plan: dict[str, Any], *, require_unformatted: bool = True
+) -> None:
+    """Validate the deliberate GPT transition while kernel partition data settles."""
+    _assert_target_identity(state, plan)
+    children = state.get("children", [])
+    labels = {child.get("partlabel") for child in children}
+    if (
+        state.get("partition_table") != "gpt"
+        or labels != {"GENTOO-ESP", "GENTOO-CRYPTROOT"}
+        or len(children) != 2
+        or (require_unformatted and any(child.get("fstype") for child in children))
+        or any(child.get("mountpoints") for child in children)
+        or state.get("mountpoints")
+    ):
+        raise RuntimeError("observed partition table differs from the authorized GPT layout")
+    esp = next(child for child in children if child.get("partlabel") == "GENTOO-ESP")
+    if esp.get("size") != 2 * 1024**3:
+        raise RuntimeError("observed EFI partition size differs from the authorized plan")
+
+
+def _is_expected_partition_settling(
+    state: dict[str, Any],
+    completed: list[int],
+    next_index: int,
+    plan: dict[str, Any],
+    commands: list[list[str]],
+) -> bool:
+    awaiting_wipe_probe = completed == [0] and next_index == 1
+    awaiting_wipe_settle = completed == [0, 1] and next_index == 2
+    awaiting_repartition = completed == [0, 1, 2] and next_index == 3
+    if awaiting_wipe_probe or awaiting_wipe_settle or awaiting_repartition:
+        _assert_empty_partition_table(state, plan)
+        return True
+    awaiting_partition_probe = completed == [0, 1, 2, 3] and next_index == 4
+    awaiting_partition_settle = completed == [0, 1, 2, 3, 4] and next_index == 5
+    if awaiting_partition_probe or awaiting_partition_settle:
+        _assert_expected_partition_table(state, plan)
+        return True
+    if (
+        completed
+        and next_index < len(commands)
+        and commands[next_index][:2] == ["udevadm", "settle"]
+        and commands[completed[-1]][0] in {"cryptsetup", "mkfs.btrfs", "mkfs.fat"}
+    ):
+        _assert_expected_partition_table(state, plan, require_unformatted=False)
+        return True
+    return False
 
 
 def ensure_state_location_off_target(
@@ -211,7 +282,13 @@ def apply_storage_plan(
             )
         latest = _exact_device_state(report_provider(config), plan)
         if journal.get("completed"):
-            if latest != journal.get("last_verified_device_state"):
+            next_index = next_unstarted_command(commands, journal)
+            if (
+                latest != journal.get("last_verified_device_state")
+                and not _is_expected_partition_settling(
+                    latest, journal["completed"], next_index, plan, commands
+                )
+            ):
                 raise RuntimeError("disk state changed since the last checkpoint; inspect manually")
         elif not plan_check["valid"]:
             raise RuntimeError("plan validation refused: " + "; ".join(plan_check["issues"]))
@@ -235,7 +312,10 @@ def apply_storage_plan(
         if not journal["completed"] and state_now != plan["observed_state"]:
             raise RuntimeError("target partition or mount state changed after planning")
         if journal["completed"] and state_now != journal.get("last_verified_device_state"):
-            raise RuntimeError("disk state changed since the previous storage command")
+            if not _is_expected_partition_settling(
+                state_now, journal["completed"], index, plan, commands
+            ):
+                raise RuntimeError("disk state changed since the previous storage command")
         if not journal["completed"]:
             mounts = state_now.get("mountpoints", [])
             child_mounts = [

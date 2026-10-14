@@ -1,5 +1,9 @@
 # Validation record
 
+See [readiness-report.md](readiness-report.md) for the current feature-by-feature
+status and the production release gate. The full QEMU rehearsal is still
+unfinished; unit-test success is not install or boot evidence.
+
 The Windows development checkout can validate renderers and mocked state
 transitions. It cannot prove the Linux live-media path, physical storage,
 encrypted boot, graphics, audio, or recovery behavior.
@@ -22,6 +26,9 @@ boot a disposable KVM guest, restore a sample file from an independent Restic
 repository, and boot rescue media to retrieve a file. Record evidence and
 results before describing those capabilities as working.
 
-The full encrypted UEFI QEMU rehearsal and physical deployment have not been
-run from this Windows workspace. Do not use the installer on either NVMe until
-the live-media plan review and backup/recovery gates have been completed.
+The OVMF/QEMU disposable Ubuntu builder is running the Gentoo base world merge
+against a disposable encrypted qcow2 target. The latest recorded count is
+213/361 packages. Target UKI generation, reboot, encrypted unlock, first login,
+desktop services, and recovery scenarios remain unverified. Do not use the
+installer on a physical drive until the release gate in `readiness-report.md`
+and the live-media plan review and backup/recovery gates have been completed.

@@ -25,6 +25,7 @@ def render_make_conf(config: dict[str, Any], cpu_threads: int, memory_gib: int) 
             'ABI_X86="64 32"',
             f'VIDEO_CARDS="{" ".join(config["video_cards"])}"',
             'INPUT_DEVICES="libinput"',
+            'FEATURES="${FEATURES} getbinpkg binpkg-request-signature"',
             "",
         ]
     )
@@ -38,7 +39,9 @@ def _uuid(value: str) -> str:
 
 
 def render_fstab(efi_uuid: str, btrfs_uuid: str) -> str:
-    efi = _uuid(efi_uuid)
+    if not re.fullmatch(r"[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}", efi_uuid):
+        raise ValueError("EFI filesystem UUID must come from live-device inspection")
+    efi = efi_uuid
     btrfs = _uuid(btrfs_uuid)
     rows = [f"UUID={efi} /efi vfat umask=0077,noatime 0 2"]
     for path, subvol in (("/", "@"), ("/home", "@home"), ("/.snapshots", "@snapshots"), ("/var/log", "@log")):
@@ -57,7 +60,7 @@ def render_kernel_cmdline(luks_uuid: str) -> str:
 
 
 def select_kde_systemd_profile(profile_list: str, profile_release: str) -> str:
-    expected = f"default/linux/amd64/{profile_release}/desktop/kde/systemd"
+    expected = f"default/linux/amd64/{profile_release}/desktop/plasma/systemd"
     matches = re.findall(r"^\s*\[(\d+)\]\s+(\S+)", profile_list, flags=re.MULTILINE)
     ids = [profile_id for profile_id, path in matches if path == expected]
     if len(ids) != 1:
@@ -110,7 +113,20 @@ def build_target_files(
         "etc/kernel/cmdline": kernel_cmdline + "\n",
         "etc/dracut.conf.d/gentoo-workstation.conf": render_dracut_config(),
         "etc/portage/make.conf": render_make_conf(make_config, cpu_threads, memory_gib),
+        "etc/portage/repos.conf/gentoo.conf": (
+            "[DEFAULT]\n"
+            "main-repo = gentoo\n\n"
+            "[gentoo]\n"
+            "location = /var/db/repos/gentoo\n"
+            "sync-type = rsync\n"
+            "sync-uri = rsync://rsync.gentoo.org/gentoo-portage\n"
+        ),
         "etc/portage/package.use/gentoo-workstation": render_package_use(packages["package_use"]),
+        "etc/portage/binrepos.conf/gentoobinhost.conf": (
+            "[binhost]\n"
+            "priority = 9999\n"
+            "sync-uri = https://distfiles.gentoo.org/releases/amd64/binpackages/23.0/x86-64-v3/\n"
+        ),
         "etc/sudoers.d/10-gentoo-workstation-wheel": "%wheel ALL=(ALL:ALL) ALL\n",
     }
 

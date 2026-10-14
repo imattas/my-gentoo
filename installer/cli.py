@@ -16,6 +16,7 @@ from installer.stages.stage3 import extract_verified_stage3, verify_root_mapping
 from installer.stages.base import configure_base_system
 from installer.provisioning.packages import PACKAGE_SETS, run_package_stage
 from installer.stages.user import setup_user
+from installer.stages.chroot import mounted_chroot
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -30,6 +31,12 @@ def load_config(path: Path = CONFIG_PATH) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="gentoo-installer")
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=CONFIG_PATH,
+        help="workstation hardware and storage config (default: config/workstation.yaml)",
+    )
     commands = parser.add_subparsers(dest="command", required=True)
     commands.add_parser("inspect", help="read-only live hardware and storage inventory")
     plan_parser = commands.add_parser("plan", help="render a read-only exact-disk storage plan")
@@ -71,6 +78,11 @@ def main(argv: list[str] | None = None) -> int:
         packages_parser.add_argument("--set", dest="package_set", required=True, choices=PACKAGE_SETS)
         packages_parser.add_argument("--storage-plan", required=True, type=Path)
         packages_parser.add_argument("--state-dir", required=True, type=Path)
+        packages_parser.add_argument(
+            "--non-interactive",
+            action="store_true",
+            help="approve Portage package operations for scripted disposable rehearsals",
+        )
         user_parser = stages.add_parser("user")
         user_parser.add_argument("--username", required=True)
         user_parser.add_argument("--storage-plan", required=True, type=Path)
@@ -96,7 +108,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "inspect":
         try:
-            report = inspect_host(load_config())
+            report = inspect_host(load_config(args.config))
         except (OSError, ValueError, RuntimeError, json.JSONDecodeError, subprocess.SubprocessError) as exc:
             print(f"inspection blocked: {exc}", file=sys.stderr)
             return 2
@@ -111,7 +123,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.command in {"plan", "validate", "authorize", "install", "resume", "verify-stage3", "configure"}:
         try:
-            config = load_config()
+            config = load_config(args.config)
             if args.command == "plan":
                 report = inspect_host(config)
                 plan = render_storage_plan(report, config, args.by_id)
@@ -138,17 +150,18 @@ def main(argv: list[str] | None = None) -> int:
                     (ROOT / "config" / "kernel.yaml").read_text(encoding="utf-8")
                 )
                 report = inspect_host(config)
-                result = configure_base_system(
-                    storage_plan,
-                    args.state_dir,
-                    config,
-                    package_config,
-                    kernel_config,
-                    timezone=args.timezone,
-                    locale=args.locale,
-                    hostname=args.hostname,
-                    report=report,
-                )
+                with mounted_chroot():
+                    result = configure_base_system(
+                        storage_plan,
+                        args.state_dir,
+                        config,
+                        package_config,
+                        kernel_config,
+                        timezone=args.timezone,
+                        locale=args.locale,
+                        hostname=args.hostname,
+                        report=report,
+                    )
                 print(json.dumps(result, indent=2))
                 return 0
 
@@ -177,24 +190,27 @@ def main(argv: list[str] | None = None) -> int:
                     package_config = json.loads(
                         (ROOT / "config" / "packages.yaml").read_text(encoding="utf-8")
                     )
-                    result = run_package_stage(
-                        args.package_set,
-                        package_config,
-                        storage_plan,
-                        args.state_dir,
-                        config,
-                    )
+                    with mounted_chroot():
+                        result = run_package_stage(
+                            args.package_set,
+                            package_config,
+                            storage_plan,
+                            args.state_dir,
+                            config,
+                            non_interactive=args.non_interactive,
+                        )
                     print(json.dumps(result, indent=2))
                     return 0
 
                 if args.stage == "user":
                     storage_plan = json.loads(args.storage_plan.read_text(encoding="utf-8"))
-                    result = setup_user(
-                        args.username,
-                        storage_plan,
-                        args.state_dir,
-                        config,
-                    )
+                    with mounted_chroot():
+                        result = setup_user(
+                            args.username,
+                            storage_plan,
+                            args.state_dir,
+                            config,
+                        )
                     print(json.dumps(result, indent=2))
                     return 0
 

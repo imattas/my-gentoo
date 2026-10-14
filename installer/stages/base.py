@@ -25,6 +25,46 @@ def _output(runner: Callable[..., Any], argv: list[str], *, input: str | None = 
     return result.stdout.strip()
 
 
+def sync_gentoo_repository(
+    root: Path,
+    state_dir: Path,
+    storage_plan_sha256: str,
+    *,
+    runner: Callable[..., Any] = subprocess.run,
+) -> dict[str, str]:
+    """Sync Portage once per plan and reject stale or corrupted sync checkpoints."""
+    repo_root = root / "var/db/repos/gentoo"
+    timestamp_file = repo_root / "metadata/timestamp.chk"
+    state_file = state_dir / "gentoo-repo-sync-state.json"
+    if state_file.exists():
+        state = json.loads(state_file.read_text(encoding="utf-8"))
+        if (
+            state.get("complete") is not True
+            or state.get("storage_plan_sha256") != storage_plan_sha256
+            or not timestamp_file.is_file()
+            or state.get("repository_timestamp") != timestamp_file.read_text(encoding="utf-8").strip()
+        ):
+            raise RuntimeError("Portage sync checkpoint is corrupt or does not match the synced repository")
+        return {"status": "already-synced", "repository_timestamp": state["repository_timestamp"]}
+
+    runner(["chroot", str(root), "emerge-webrsync"], check=True)
+    if not timestamp_file.is_file():
+        raise RuntimeError("Portage sync completed without a repository timestamp")
+    timestamp = timestamp_file.read_text(encoding="utf-8").strip()
+    if not timestamp:
+        raise RuntimeError("Portage repository timestamp is empty")
+    _atomic_json(
+        state_file,
+        {
+            "schema_version": 1,
+            "storage_plan_sha256": storage_plan_sha256,
+            "repository_timestamp": timestamp,
+            "complete": True,
+        },
+    )
+    return {"status": "synced", "repository_timestamp": timestamp}
+
+
 def configure_base_system(
     storage_plan: dict[str, Any],
     state_dir: Path,
@@ -116,9 +156,6 @@ def configure_base_system(
         text=True,
     )
 
-    profile_list = _output(runner, ["chroot", str(root), "eselect", "profile", "list"])
-    profile_id = select_kde_systemd_profile(profile_list, package_config["profile_release"])
-
     if report is None:
         report = inspect_host(workstation)
     cpu_threads = report.get("host", {}).get("cpu_threads")
@@ -138,8 +175,13 @@ def configure_base_system(
         hostname=hostname,
         locale=locale,
     )
-    runner(["chroot", str(root), "eselect", "profile", "set", profile_id], check=True)
+    # Portage needs an explicit repository before the first snapshot can be bootstrapped.
     write_target_files(root, files)
+    sync_gentoo_repository(root, state_dir, storage_plan["sha256"], runner=runner)
+    profile_list = _output(runner, ["chroot", str(root), "eselect", "profile", "list"])
+    profile_id = select_kde_systemd_profile(profile_list, package_config["profile_release"])
+    runner(["chroot", str(root), "eselect", "profile", "set", profile_id], check=True)
+    runner(["chroot", str(root), "getuto"], check=True)
     runner(
         ["chroot", str(root), "ln", "-snf", f"/usr/share/zoneinfo/{timezone}", "/etc/localtime"],
         check=True,
@@ -152,7 +194,7 @@ def configure_base_system(
         "btrfs_uuid": btrfs_uuid,
         "luks_uuid": luks_uuid,
         "files_written": sorted(files),
-        "next": "review emerge --pretend output before package installation",
+        "next": "resolve all configured sets with emerge --pretend before installation",
     }
     _atomic_json(
         state_dir / "gentoo-base-config-state.json",

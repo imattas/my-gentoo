@@ -45,6 +45,15 @@ class WorkstationConfigTests(unittest.TestCase):
         self.assertEqual(result["status"], "ambiguous")
         self.assertIsNone(result["device"])
 
+    def test_null_device_metadata_is_treated_as_missing_not_crash(self):
+        config = {"storage": {"system_target": {"model": "", "serial": "QEMU-TEST"}}}
+        device = {"type": "disk", "model": None, "serial": "QEMU-TEST", "path": "/dev/vdb"}
+
+        result = identify_system_target([device], config)
+
+        self.assertEqual(result["status"], "identified")
+        self.assertEqual(result["device"]["path"], "/dev/vdb")
+
     def test_cpu_model_comes_from_linux_cpuinfo(self):
         info = "processor : 0\nvendor_id : AuthenticAMD\nmodel name : AMD Ryzen 7 7800X3D\n"
 

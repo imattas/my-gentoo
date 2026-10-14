@@ -81,6 +81,22 @@ class StoragePlanTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             render_storage_plan(report(), CONFIG, "/dev/disk/by-id/nvme-other-disk")
 
+    def test_null_model_from_lsblk_round_trips_through_plan_validation(self):
+        import copy
+
+        config = copy.deepcopy(CONFIG)
+        config["storage"]["system_target"]["model"] = ""
+        config["storage"]["system_target"]["serial"] = "GQ-TARGET"
+        observed = report()
+        observed["block_devices"][0]["model"] = None
+        observed["block_devices"][0]["serial"] = "GQ-TARGET"
+        observed["block_devices"][0]["by_id"] = ["/dev/disk/by-id/virtio-GQ-TARGET"]
+        plan = render_storage_plan(
+            observed, config, "/dev/disk/by-id/virtio-GQ-TARGET"
+        )
+
+        self.assertTrue(validate_storage_plan(plan, observed, True, True, config)["valid"])
+
     def test_authorization_requires_exact_plan_hash_and_disk_serial(self):
         plan = render_storage_plan(report(), CONFIG, BY_ID)
         with self.assertRaises(ValueError):

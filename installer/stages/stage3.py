@@ -20,7 +20,10 @@ GENTOO_ROOT = Path("/mnt/gentoo")
 def extract_sha512(signed_text: str, filename: str) -> str:
     """Read a SHA512 entry for exactly filename from signed Gentoo metadata."""
     signed_body = signed_text.split("-----BEGIN PGP SIGNATURE-----", 1)[0]
-    entries = re.findall(r"(?m)^([0-9a-fA-F]{128})\s+([^\s]+)\s*$", signed_body)
+    entries = re.findall(
+        r"(?m)^#\s*SHA512 HASH\s*\r?\n([0-9a-fA-F]{128})[ \t]+([^\s]+)[ \t]*$",
+        signed_body,
+    )
     matches = [digest.lower() for digest, name in entries if name == filename]
     if len(matches) != 1:
         raise ValueError(f"expected exactly one SHA512 entry for {filename}")
@@ -54,7 +57,7 @@ def verify_root_mapping(
     if actual_partition != expected_partition:
         raise RuntimeError("gentoo-root mapping does not use the GENTOO-CRYPTROOT partition")
     partlabel = runner(
-        ["lsblk", "--list", "--noheadings", "--raw", "--output", "PARTLABEL", labeled_partition],
+        ["lsblk", "--noheadings", "--raw", "--output", "PARTLABEL", labeled_partition],
         check=True,
         capture_output=True,
         text=True,
@@ -62,7 +65,7 @@ def verify_root_mapping(
     if partlabel != "GENTOO-CRYPTROOT":
         raise RuntimeError("encrypted-root partition label does not match the install plan")
     ancestry = runner(
-        ["lsblk", "--list", "--paths", "--inverse", "--noheadings", "--raw", "--output", "PATH", actual_partition],
+        ["lsblk", "--paths", "--inverse", "--noheadings", "--raw", "--output", "PATH", actual_partition],
         check=True,
         capture_output=True,
         text=True,

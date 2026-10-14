@@ -12,8 +12,8 @@ def identify_system_target(devices: list[dict[str, Any]], config: dict[str, Any]
         device
         for device in devices
         if device.get("type") == "disk"
-        and device.get("model", "").strip() == expected["model"]
-        and device.get("serial", "").strip() == expected["serial"]
+        and str(device.get("model") or "").strip() == expected["model"]
+        and str(device.get("serial") or "").strip() == expected["serial"]
     ]
     if len(matches) == 1:
         return {"status": "identified", "match_count": 1, "device": matches[0]}

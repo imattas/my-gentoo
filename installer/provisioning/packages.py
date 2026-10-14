@@ -6,7 +6,9 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import struct
 import subprocess
+import sys
 from datetime import datetime, timezone
 from typing import Any
 
@@ -18,7 +20,11 @@ from installer.stages.storage import _append_event, _atomic_json, ensure_state_l
 PACKAGE_SETS = ("base", "desktop", "gaming", "development", "virtualization", "security_backup")
 
 def render_emerge_commands(
-    config: dict[str, Any], package_set: str, target_root: str = "/mnt/gentoo"
+    config: dict[str, Any],
+    package_set: str,
+    target_root: str = "/mnt/gentoo",
+    *,
+    non_interactive: bool = False,
 ) -> list[list[str]]:
     if target_root != "/mnt/gentoo":
         raise ValueError("package operations are bound to the configured Gentoo root")
@@ -26,13 +32,13 @@ def render_emerge_commands(
     if package_set not in sets:
         raise ValueError(f"unknown package set: {package_set}")
     prefix = ["chroot", target_root, "emerge"]
+    confirmation = ["--ask=n"] if non_interactive else ["--ask"]
     commands: list[list[str]] = []
     if package_set == "base":
-        commands.append(prefix + ["--sync"])
         commands.append(
-            prefix + ["--ask", "--verbose", "--update", "--deep", "--newuse", "--with-bdeps=y", "@world"]
+            prefix + confirmation + ["--verbose", "--update", "--deep", "--newuse", "--with-bdeps=y", "@world"]
         )
-    commands.append(prefix + ["--ask", "--verbose", *sets[package_set]])
+    commands.append(prefix + confirmation + ["--verbose", *sets[package_set]])
     if package_set == "base":
         commands.append(
             ["chroot", target_root, "visudo", "--check", "--file", "/etc/sudoers"]
@@ -57,14 +63,108 @@ def render_emerge_commands(
 def validate_boot_assets(root: Path) -> list[str]:
     efi = root / "efi"
     bootloader = efi / "EFI" / "systemd" / "systemd-bootx64.efi"
-    ukis = sorted(
-        path.name
-        for path in (efi / "EFI" / "Linux").glob("*.efi")
-        if path.is_file() and path.stat().st_size > 0
-    )
-    if not bootloader.is_file() or not ukis:
-        raise RuntimeError("systemd-boot or a production UKI is missing from the EFI partition")
-    return ukis
+    production = efi / "EFI" / "Linux" / "gentoo-production.efi"
+    linux_dir = production.parent
+    expected_cmdline_path = root / "etc" / "kernel" / "cmdline"
+    try:
+        expected_cmdline = expected_cmdline_path.read_text(encoding="utf-8").split()
+    except OSError as exc:
+        raise RuntimeError("configured kernel command line is missing") from exc
+    generated = [
+        image
+        for image in linux_dir.glob("*.efi")
+        if image != production
+        and _is_unified_kernel_image(image)
+        and _uki_has_command_line(image, expected_cmdline)
+    ]
+    if generated:
+        source = max(generated, key=lambda image: image.stat().st_mtime_ns)
+        temporary = production.with_suffix(".efi.new")
+        import shutil
+
+        shutil.copy2(source, temporary)
+        os.replace(temporary, production)
+    if (
+        not _is_efi_application(bootloader)
+        or not _is_unified_kernel_image(production)
+        or not _uki_has_command_line(production, expected_cmdline)
+    ):
+        raise RuntimeError("systemd-boot and a valid EFI application production UKI are required")
+    return [production.name]
+
+
+def _is_efi_application(path: Path) -> bool:
+    """Check the bounded PE/COFF headers and EFI application subsystem."""
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return False
+    if len(data) < 0x40 or data[:2] != b"MZ":
+        return False
+    pe_offset = struct.unpack_from("<I", data, 0x3C)[0]
+    if pe_offset > len(data) - 24 or data[pe_offset : pe_offset + 4] != b"PE\0\0":
+        return False
+    optional_size = struct.unpack_from("<H", data, pe_offset + 20)[0]
+    optional_offset = pe_offset + 24
+    if optional_size < 70 or optional_offset + optional_size > len(data):
+        return False
+    if struct.unpack_from("<H", data, optional_offset)[0] not in {0x10B, 0x20B}:
+        return False
+    return struct.unpack_from("<H", data, optional_offset + 68)[0] == 10
+
+
+def _is_unified_kernel_image(path: Path) -> bool:
+    """Require a PE EFI app carrying non-empty kernel, initrd, and cmdline sections."""
+    try:
+        data = path.read_bytes()
+    except OSError:
+        return False
+    if not _is_efi_application(path):
+        return False
+    pe_offset = struct.unpack_from("<I", data, 0x3C)[0]
+    section_count = struct.unpack_from("<H", data, pe_offset + 6)[0]
+    optional_size = struct.unpack_from("<H", data, pe_offset + 20)[0]
+    section_table = pe_offset + 24 + optional_size
+    if section_count == 0 or section_table + section_count * 40 > len(data):
+        return False
+    sections: dict[str, bytes] = {}
+    for index in range(section_count):
+        offset = section_table + index * 40
+        name = data[offset : offset + 8].split(b"\0", 1)[0].decode("ascii", errors="ignore")
+        raw_size = struct.unpack_from("<I", data, offset + 16)[0]
+        raw_offset = struct.unpack_from("<I", data, offset + 20)[0]
+        if raw_size and raw_offset <= len(data) and raw_size <= len(data) - raw_offset:
+            sections[name] = data[raw_offset : raw_offset + raw_size]
+    return all(sections.get(name) for name in (".linux", ".initrd", ".cmdline"))
+
+
+def _uki_has_command_line(path: Path, expected_tokens: list[str]) -> bool:
+    data = path.read_bytes()
+    if not _is_efi_application(path):
+        return False
+    pe_offset = struct.unpack_from("<I", data, 0x3C)[0]
+    section_count = struct.unpack_from("<H", data, pe_offset + 6)[0]
+    optional_size = struct.unpack_from("<H", data, pe_offset + 20)[0]
+    section_table = pe_offset + 24 + optional_size
+    if section_table + section_count * 40 > len(data):
+        return False
+    for index in range(section_count):
+        offset = section_table + index * 40
+        name = data[offset : offset + 8].split(b"\0", 1)[0]
+        if name != b".cmdline":
+            continue
+        size = struct.unpack_from("<I", data, offset + 16)[0]
+        raw_offset = struct.unpack_from("<I", data, offset + 20)[0]
+        if not size or raw_offset > len(data) or size > len(data) - raw_offset:
+            return False
+        actual_tokens = set(
+            data[raw_offset : raw_offset + size]
+            .decode("utf-8", errors="ignore")
+            .strip("\0")
+            .split()
+        )
+        return set(expected_tokens).issubset(actual_tokens)
+    return False
 
 
 def run_package_stage(
@@ -75,6 +175,7 @@ def run_package_stage(
     workstation: dict[str, Any],
     *,
     root: Path = Path("/mnt/gentoo"),
+    non_interactive: bool = False,
     runner: Any = subprocess.run,
     state_location_check: Any = ensure_state_location_off_target,
 ) -> dict[str, Any]:
@@ -148,7 +249,9 @@ def run_package_stage(
     ).stdout.strip()
     if runner(["readlink", "-f", efi_mount[1]], check=True, capture_output=True, text=True).stdout.strip() != efi_source:
         raise RuntimeError("mounted EFI filesystem is not the planned GENTOO-ESP partition")
-    command_list = render_emerge_commands(package_config, package_set, str(root))
+    command_list = render_emerge_commands(
+        package_config, package_set, str(root), non_interactive=non_interactive
+    )
     if package_set == "base":
         efi_stat = os.statvfs(root / "efi")
         free_bytes = efi_stat.f_bavail * efi_stat.f_frsize
@@ -157,6 +260,8 @@ def run_package_stage(
 
     state_path = state_dir / f"gentoo-packages-{package_set}.json"
     event_path = state_dir / "gentoo-package-events.jsonl"
+    log_dir = state_dir / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
     command_digest = hashlib.sha256(
         json.dumps(command_list, separators=(",", ":")).encode()
     ).hexdigest()
@@ -196,7 +301,30 @@ def run_package_stage(
             },
         )
         print("Running: " + " ".join(command), flush=True)
-        runner(command, check=True)
+        log_path = log_dir / f"packages-{package_set}-command-{index}.log"
+        try:
+            command_result = runner(command, check=True, capture_output=True, text=True)
+        except subprocess.CalledProcessError as exc:
+            output = (exc.stdout or "") + (exc.stderr or "")
+            log_path.write_text(output, encoding="utf-8")
+            _append_event(
+                event_path,
+                {
+                    "time": datetime.now(timezone.utc).isoformat(),
+                    "event": "package-command-failed",
+                    "package_set": package_set,
+                    "index": index,
+                    "returncode": exc.returncode,
+                    "log": str(log_path),
+                },
+            )
+            raise RuntimeError(
+                f"package command {index} failed; inspect {log_path} before recovery"
+            ) from exc
+        output = (command_result.stdout or "") + (command_result.stderr or "")
+        log_path.write_text(output, encoding="utf-8")
+        if output:
+            print(output, end="" if output.endswith("\n") else "\n", flush=True)
         if package_set == "base" and index == len(command_list) - 1:
             journal["uki_files"] = validate_boot_assets(root)
         journal["completed"].append(index)
@@ -210,6 +338,7 @@ def run_package_stage(
                 "package_set": package_set,
                 "index": index,
                 "returncode": 0,
+                "log": str(log_path),
             },
         )
 

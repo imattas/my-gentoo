@@ -20,8 +20,8 @@ def plan_hash_matches(plan: dict[str, Any]) -> bool:
 def _disk_state(device: dict[str, Any]) -> dict[str, Any]:
     return {
         "path": device.get("path"),
-        "model": device.get("model", "").strip(),
-        "serial": device.get("serial", "").strip(),
+        "model": str(device.get("model") or "").strip(),
+        "serial": str(device.get("serial") or "").strip(),
         "size_bytes": device.get("size"),
         "partition_table": device.get("pttype"),
         "filesystem": device.get("fstype"),
@@ -48,8 +48,8 @@ def render_storage_plan(
         device
         for device in report.get("block_devices", [])
         if device.get("type") == "disk"
-        and device.get("model", "").strip() == expected["model"]
-        and device.get("serial", "").strip() == expected["serial"]
+        and str(device.get("model") or "").strip() == expected["model"]
+        and str(device.get("serial") or "").strip() == expected["serial"]
     ]
     if len(candidates) != 1:
         raise ValueError("configured model and serial must match exactly one discovered disk")
@@ -64,6 +64,8 @@ def render_storage_plan(
     esp_part = "/dev/disk/by-partlabel/GENTOO-ESP"
     commands = [
         ["sgdisk", "--zap-all", selected_by_id],
+        ["partprobe", selected_by_id],
+        ["udevadm", "settle"],
         [
             "sgdisk",
             "--new=1:0:+2G",
@@ -77,9 +79,13 @@ def render_storage_plan(
         ["partprobe", selected_by_id],
         ["udevadm", "settle"],
         ["cryptsetup", "luksFormat", "--type", "luks2", root_part],
+        ["udevadm", "settle"],
         ["cryptsetup", "open", root_part, "gentoo-root"],
+        ["udevadm", "settle"],
         ["mkfs.btrfs", "--label", "gentoo-root", "/dev/mapper/gentoo-root"],
+        ["udevadm", "settle"],
         ["mkfs.fat", "-F", "32", "-n", "GENTOO-ESP", esp_part],
+        ["udevadm", "settle"],
         ["mkdir", "--parents", "/mnt/gentoo-top"],
         ["mount", "-o", "subvolid=5", "/dev/mapper/gentoo-root", "/mnt/gentoo-top"],
         ["btrfs", "subvolume", "create", "/mnt/gentoo-top/@"],
@@ -167,8 +173,8 @@ def validate_storage_plan(
         device
         for device in report.get("block_devices", [])
         if device.get("type") == "disk"
-        and device.get("model", "").strip() == expected.get("model")
-        and device.get("serial", "").strip() == expected.get("serial")
+        and str(device.get("model") or "").strip() == expected.get("model")
+        and str(device.get("serial") or "").strip() == expected.get("serial")
         and expected.get("by_id") in device.get("by_id", [])
     ]
     if len(matches) != 1:

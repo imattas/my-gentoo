@@ -69,6 +69,18 @@ def workstation_report():
 
 
 class StorageStageTests(unittest.TestCase):
+    def test_state_location_identity_tolerates_null_partition_serial(self):
+        from installer.stages.storage import assert_state_device_is_unprotected
+
+        assert_state_device_is_unprotected(
+            [
+                {"path": "/dev/vda", "type": "disk", "serial": "GQ-RUNNER"},
+                {"path": "/dev/vda1", "type": "part", "serial": None},
+            ],
+            "/dev/vdb",
+            ("GQ-TARGET", "GQ-DATA"),
+        )
+
     def test_storage_stage_requires_all_explicit_confirmations(self):
         self.assertTrue(
             validate_stage_authorization(
@@ -123,7 +135,7 @@ class StorageStageTests(unittest.TestCase):
         signed_text = (
             "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA256\n\n"
             f"# SHA512 HASH\n{digest} stage3.tar.xz\n"
-            "# SHA256 HASH\n{'b' * 64} another.tar.xz\n"
+            f"# BLAKE2B HASH\n{'b' * 128} stage3.tar.xz\n"
             "-----BEGIN PGP SIGNATURE-----\n"
         )
 

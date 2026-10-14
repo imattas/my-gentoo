@@ -1,11 +1,13 @@
 {
   "profile_release": "23.0",
-  "desktop_profile": "default/linux/amd64/23.0/desktop/kde/systemd",
+  "desktop_profile": "default/linux/amd64/23.0/desktop/plasma/systemd",
   "global_use": ["X", "wayland", "vulkan"],
   "video_cards": ["amdgpu", "radeonsi"],
   "package_use": [
+    ["sys-libs/ncurses", "-gpm"],
+    ["dev-python/pillow", "-truetype"],
     ["sys-apps/systemd", "boot", "ukify"],
-    ["sys-kernel/installkernel", "dracut", "systemd-boot", "ukify", "uki"]
+    ["sys-kernel/installkernel", "systemd", "dracut", "systemd-boot", "ukify", "uki"]
   ],
   "sets": {
     "base": [
