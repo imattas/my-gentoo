@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "hardware": {
+    "cpu_model": "AMD Ryzen 7 7800X3D 8-Core Processor",
+    "cpu_cores": 8,
+    "cpu_threads": 8,
+    "ram_gib": 64,
+    "gpu_model": "AMD Radeon RX 7900 XTX",
+    "motherboard_model": "ASRock X670E Steel Legend"
+  },
+  "storage": {
+    "system_target": {
+      "model": "Samsung SSD 990 PRO with Heatsink 2TB",
+      "serial": "0025_384B_3140_238C.",
+      "by_id": null,
+      "partition_table": "gpt",
+      "efi_size_gib": 2,
+      "efi_mount": "/efi",
+      "root_encryption": "luks2",
+      "root_filesystem": "btrfs",
+      "btrfs_subvolumes": {
+        "@": "/",
+        "@home": "/home",
+        "@snapshots": "/.snapshots",
+        "@log": "/var/log"
+      }
+    },
+    "data_disk": {
+      "model": "WD_BLACK SN8100 4000GB",
+      "serial": "E823_8FA6_BF53_0001_001B_448B_4292_6EDF.",
+      "policy": "separate-authorization-required"
+    },
+    "data_disk_policy": "never-auto-target",
+    "mount_options": ["compress=zstd:3", "noatime"],
+    "swap": "zram; hibernation not configured"
+  },
+  "system": {
+    "architecture": "amd64",
+    "init": "systemd",
+    "profile_intent": "desktop/systemd/multilib; resolve exact current profile in target",
+    "desktop": "KDE Plasma 6",
+    "session": "Wayland",
+    "boot": "UEFI systemd-boot UKI",
+    "locale": "prompt during install",
+    "timezone": "prompt during install",
+    "compiler_flags_candidate": "-O2 -pipe -march=znver4",
+    "build_jobs": "derive from live RAM and memory pressure"
+  },
+  "network": {
+    "manager": "NetworkManager",
+    "firewall": "nftables"
+  }
+}

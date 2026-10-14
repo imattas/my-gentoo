@@ -1,0 +1,1 @@
+"""Gentoo workstation deployment controller."""
