@@ -5,6 +5,10 @@ ISO boots from one file, while the writable Ventoy data partition holds this
 installer and the pinned Stage 3 archive. The image and installer do not start
 disk writes automatically.
 
+Ventoy Secure Boot support will be disabled to avoid enrolling a Ventoy key
+into motherboard firmware. If firmware Secure Boot blocks the USB, stop at
+that point; changing firmware settings remains an operator action.
+
 After booting the USB in UEFI mode, open the Ventoy volume in the live desktop
 and run, from a terminal:
 
