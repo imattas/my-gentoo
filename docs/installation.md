@@ -34,7 +34,38 @@ python3 -m installer.cli validate \
 
 Validation compares current identity, partition, and mount state against the
 saved plan. `authorize` additionally requires typing the plan's full SHA-256
-and exact disk serial; it only records scope and does not execute commands.
+and exact disk serial; it only records scope and does not execute commands. To
+create that authorization record on the recovery device after you have reviewed
+the full plan:
+
+```bash
+python3 -m installer.cli authorize \
+  --plan /mnt/recovery/gentoo-storage-plan.json \
+  --confirm-plan-hash <full-plan-sha256> \
+  --confirm-serial '0025_384B_3140_238C.' \
+  --backup-verified --recovery-media-verified \
+  > /mnt/recovery/gentoo-storage-authorization.json
+```
+
+Only after reviewing that plan and explicitly choosing to erase the Samsung
+drive, run `install storage` with the recovery device mounted at
+`/mnt/recovery`. It requires the hash, serial, exact phrase, fresh inspection,
+backup/recovery acknowledgements, and an external state directory. Use a
+separate USB or other external disk for `/mnt/recovery`; the SN8100 is protected
+and must not hold installer state. The state and event log are stored there. An
+interrupted command is never replayed automatically; inspect and resolve the
+disk state before continuing.
+
+```bash
+python3 -m installer.cli install storage \
+  --plan /mnt/recovery/gentoo-storage-plan.json \
+  --authorization /mnt/recovery/gentoo-storage-authorization.json \
+  --confirm-plan-hash <full-plan-sha256> \
+  --confirm-serial '0025_384B_3140_238C.' \
+  --confirm-erasure ERASE-SYSTEM-DISK \
+  --state-dir /mnt/recovery \
+  --backup-verified --recovery-media-verified
+```
 
 The configured WD_BLACK SN8100 remains ineligible as an automatic target. Do not
 partition either NVMe until the installer renders a fresh plan with the exact
@@ -44,3 +75,32 @@ current official Gentoo verification metadata.
 
 `config/workstation.yaml` is JSON, which is a strict subset of YAML. This keeps
 the preflight reader limited to Python's standard library in the live image.
+
+## Stage 3 verification
+
+The checked-in Stage 3 archive is pinned by filename and SHA512 in the
+workstation config. Its local SHA512 matches the value published in Gentoo's
+`DIGESTS` file; signature verification still needs to be completed from verified
+Gentoo live media. Download the matching metadata and detached signature beside
+the archive, then verify both signatures and the hash before extraction:
+
+```bash
+stage3=stage3-amd64-systemd-20261011T170049Z.tar.xz
+base=https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-systemd
+curl -fL "$base/$stage3.DIGESTS" -o "$stage3.DIGESTS"
+curl -fL "$base/$stage3.asc" -o "$stage3.asc"
+python3 -m installer.cli verify-stage3
+```
+
+The verified Gentoo LiveGUI media must provide
+`/usr/share/openpgp-keys/gentoo-release.asc`. Verify the live ISO itself before
+trusting its bundled release keyring. The controller verifies the signed
+metadata, the archive's detached signature, and the matching SHA512. Extraction
+is blocked if any check fails. After the storage stage completed and the LUKS
+mapping was confirmed to come from the planned drive, extract the archive:
+
+```bash
+python3 -m installer.cli install stage3 \
+  --storage-plan /mnt/recovery/gentoo-storage-plan.json \
+  --state-dir /mnt/recovery
+```

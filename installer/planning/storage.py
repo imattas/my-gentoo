@@ -13,6 +13,10 @@ def _canonical_hash(value: dict[str, Any]) -> str:
     return hashlib.sha256(encoded).hexdigest()
 
 
+def plan_hash_matches(plan: dict[str, Any]) -> bool:
+    return plan.get("sha256") == _canonical_hash(plan)
+
+
 def _disk_state(device: dict[str, Any]) -> dict[str, Any]:
     return {
         "path": device.get("path"),
@@ -76,6 +80,26 @@ def render_storage_plan(
         ["cryptsetup", "open", root_part, "gentoo-root"],
         ["mkfs.btrfs", "--label", "gentoo-root", "/dev/mapper/gentoo-root"],
         ["mkfs.fat", "-F", "32", "-n", "GENTOO-ESP", esp_part],
+        ["mkdir", "--parents", "/mnt/gentoo-top"],
+        ["mount", "-o", "subvolid=5", "/dev/mapper/gentoo-root", "/mnt/gentoo-top"],
+        ["btrfs", "subvolume", "create", "/mnt/gentoo-top/@"],
+        ["btrfs", "subvolume", "create", "/mnt/gentoo-top/@home"],
+        ["btrfs", "subvolume", "create", "/mnt/gentoo-top/@snapshots"],
+        ["btrfs", "subvolume", "create", "/mnt/gentoo-top/@log"],
+        ["umount", "/mnt/gentoo-top"],
+        ["mkdir", "--parents", "/mnt/gentoo"],
+        [
+            "mount",
+            "-o",
+            "compress=zstd:3,noatime,subvol=@",
+            "/dev/mapper/gentoo-root",
+            "/mnt/gentoo",
+        ],
+        ["mkdir", "--parents", "/mnt/gentoo/home", "/mnt/gentoo/.snapshots", "/mnt/gentoo/var/log", "/mnt/gentoo/efi"],
+        ["mount", "-o", "compress=zstd:3,noatime,subvol=@home", "/dev/mapper/gentoo-root", "/mnt/gentoo/home"],
+        ["mount", "-o", "compress=zstd:3,noatime,subvol=@snapshots", "/dev/mapper/gentoo-root", "/mnt/gentoo/.snapshots"],
+        ["mount", "-o", "compress=zstd:3,noatime,subvol=@log", "/dev/mapper/gentoo-root", "/mnt/gentoo/var/log"],
+        ["mount", esp_part, "/mnt/gentoo/efi"],
     ]
     plan = {
         "schema_version": 1,
@@ -121,7 +145,7 @@ def validate_storage_plan(
     issues: list[str] = []
     if plan.get("plan_type") != "gentoo-system-storage":
         issues.append("unsupported plan type")
-    if plan.get("sha256") != _canonical_hash(plan):
+    if not plan_hash_matches(plan):
         issues.append("plan hash does not match its contents")
     try:
         expected_plan = render_storage_plan(report, config, plan.get("target", {}).get("by_id", ""))

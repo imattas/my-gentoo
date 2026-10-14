@@ -43,6 +43,10 @@ class StoragePlanTests(unittest.TestCase):
         self.assertEqual(plan["layout"]["efi_size_bytes"], 2 * 1024**3)
         self.assertEqual(plan["layout"]["root_encryption"], "LUKS2")
         self.assertIn("existing partition data will be destroyed", plan["effects"])
+        self.assertTrue(
+            any(command[:3] == ["btrfs", "subvolume", "create"]
+                for command in plan["commands_for_review_only"])
+        )
         self.assertEqual(len(plan["sha256"]), 64)
 
     def test_validation_requires_backup_and_recovery_and_unchanged_device_state(self):

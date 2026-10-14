@@ -49,5 +49,10 @@
   "network": {
     "manager": "NetworkManager",
     "firewall": "nftables"
+  },
+  "stage3": {
+    "filename": "stage3-amd64-systemd-20261011T170049Z.tar.xz",
+    "sha512": "11afc773b4874b673a7d218f3c40054de7438fda28930cf15eaccde5bf71dfc1bbdbf40aa07e60708469e042afa37beb4a7e0eaabd7661308d5414eee4ef4899",
+    "metadata_base_url": "https://distfiles.gentoo.org/releases/amd64/autobuilds/current-stage3-amd64-systemd"
   }
 }

@@ -44,6 +44,13 @@ def _network_state() -> dict[str, Any]:
     return {"status": "observed", "interfaces": interfaces, "default_routes": routes}
 
 
+def _pci_devices() -> dict[str, Any]:
+    if not shutil.which("lspci"):
+        return {"status": "unavailable", "devices": []}
+    completed = subprocess.run(["lspci", "-nn"], check=True, capture_output=True, text=True)
+    return {"status": "observed", "devices": completed.stdout.splitlines()}
+
+
 def _by_id_links() -> dict[str, list[str]]:
     links: dict[str, list[str]] = {}
     root = Path("/dev/disk/by-id")
@@ -71,7 +78,7 @@ def inspect_host(config: dict[str, Any]) -> dict[str, Any]:
             "--json",
             "--bytes",
             "--output",
-            "NAME,PATH,TYPE,SIZE,MODEL,SERIAL,WWN,TRAN,PTTYPE,FSTYPE,MOUNTPOINTS,PKNAME",
+            "NAME,PATH,TYPE,SIZE,MODEL,SERIAL,WWN,TRAN,PTTYPE,PARTLABEL,PARTUUID,FSTYPE,MOUNTPOINTS,PKNAME",
         ]
     )
     devices = block.get("blockdevices", [])
@@ -100,6 +107,7 @@ def inspect_host(config: dict[str, Any]) -> dict[str, Any]:
         },
         "firmware": firmware,
         "network": _network_state(),
+        "pci": _pci_devices(),
         "block_devices": devices,
         "target": {
             "status": target["status"],

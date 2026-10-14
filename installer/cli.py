@@ -5,11 +5,14 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import subprocess
 import sys
 
 from installer.authorization.plan import create_authorization_record
 from installer.discovery.host import inspect_host
-from installer.planning.storage import render_storage_plan, validate_storage_plan
+from installer.planning.storage import plan_hash_matches, render_storage_plan, validate_storage_plan
+from installer.stages.storage import apply_storage_plan
+from installer.stages.stage3 import extract_verified_stage3, verify_root_mapping, verify_stage3
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -40,12 +43,42 @@ def main(argv: list[str] | None = None) -> int:
     authorize_parser.add_argument("--confirm-serial", required=True)
     authorize_parser.add_argument("--backup-verified", action="store_true")
     authorize_parser.add_argument("--recovery-media-verified", action="store_true")
+    for command_name in ("install", "resume"):
+        stage_parser = commands.add_parser(command_name)
+        stages = stage_parser.add_subparsers(dest="stage", required=True)
+        storage_parser = stages.add_parser("storage")
+        storage_parser.add_argument("--plan", required=True, type=Path)
+        storage_parser.add_argument("--authorization", required=True, type=Path)
+        storage_parser.add_argument("--confirm-plan-hash", required=True)
+        storage_parser.add_argument("--confirm-serial", required=True)
+        storage_parser.add_argument("--confirm-erasure", required=True)
+        storage_parser.add_argument("--state-dir", required=True, type=Path)
+        storage_parser.add_argument("--backup-verified", action="store_true")
+        storage_parser.add_argument("--recovery-media-verified", action="store_true")
+        stage3_parser = stages.add_parser("stage3")
+        stage3_parser.add_argument("--storage-plan", required=True, type=Path)
+        stage3_parser.add_argument("--state-dir", required=True, type=Path)
+        stage3_parser.add_argument("--archive", type=Path)
+        stage3_parser.add_argument("--digests", type=Path)
+        stage3_parser.add_argument("--signature", type=Path)
+        stage3_parser.add_argument(
+            "--keyring", type=Path, default=Path("/usr/share/openpgp-keys/gentoo-release.asc")
+        )
+    stage3_parser = commands.add_parser(
+        "verify-stage3", help="verify the pinned Stage 3 signatures and SHA512"
+    )
+    stage3_parser.add_argument("--archive", type=Path)
+    stage3_parser.add_argument("--digests", type=Path)
+    stage3_parser.add_argument("--signature", type=Path)
+    stage3_parser.add_argument(
+        "--keyring", type=Path, default=Path("/usr/share/openpgp-keys/gentoo-release.asc")
+    )
     args = parser.parse_args(argv)
 
     if args.command == "inspect":
         try:
             report = inspect_host(load_config())
-        except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as exc:
+        except (OSError, ValueError, RuntimeError, json.JSONDecodeError, subprocess.SubprocessError) as exc:
             print(f"inspection blocked: {exc}", file=sys.stderr)
             return 2
         print(json.dumps(report, indent=2, sort_keys=True))
@@ -57,13 +90,88 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 2
         return 0
-    if args.command in {"plan", "validate", "authorize"}:
+    if args.command in {"plan", "validate", "authorize", "install", "resume", "verify-stage3"}:
         try:
             config = load_config()
             if args.command == "plan":
                 report = inspect_host(config)
                 plan = render_storage_plan(report, config, args.by_id)
                 print(json.dumps(plan, indent=2, sort_keys=True))
+                return 0
+
+            if args.command == "verify-stage3":
+                stage3 = config["stage3"]
+                archive = args.archive or (ROOT / stage3["filename"])
+                digests = args.digests or archive.with_name(archive.name + ".DIGESTS")
+                signature = args.signature or archive.with_name(archive.name + ".asc")
+                result = verify_stage3(archive, digests, signature, args.keyring)
+                if result["sha512"] != stage3["sha512"]:
+                    raise ValueError("verified archive differs from the pinned workstation Stage 3")
+                print(json.dumps(result, indent=2))
+                return 0
+
+            if args.command in {"install", "resume"}:
+                if args.stage == "storage":
+                    plan = json.loads(args.plan.read_text(encoding="utf-8"))
+                    authorization = json.loads(args.authorization.read_text(encoding="utf-8"))
+                    report = inspect_host(config)
+                    result = apply_storage_plan(
+                        plan,
+                        authorization,
+                        config,
+                        report,
+                        args.state_dir,
+                        confirmed_sha256=args.confirm_plan_hash,
+                        confirmed_serial=args.confirm_serial,
+                        erasure_phrase=args.confirm_erasure,
+                        backup_verified=args.backup_verified,
+                        recovery_media_verified=args.recovery_media_verified,
+                    )
+                    print(json.dumps(result, indent=2))
+                    return 0
+
+                plan = json.loads(args.storage_plan.read_text(encoding="utf-8"))
+                if not plan_hash_matches(plan):
+                    raise ValueError("storage plan content does not match its hash")
+                configured_disk = config["storage"]["system_target"]
+                if (
+                    plan.get("target", {}).get("model") != configured_disk["model"]
+                    or plan.get("target", {}).get("serial") != configured_disk["serial"]
+                    or not plan.get("target", {}).get("by_id", "").startswith("/dev/disk/by-id/")
+                ):
+                    raise ValueError("storage plan does not name the configured Samsung system disk")
+                state_dir = args.state_dir.resolve(strict=True)
+                storage_state = json.loads(
+                    (state_dir / "gentoo-storage-state.json").read_text(encoding="utf-8")
+                )
+                expected_commands = plan["commands_for_review_only"]
+                if (
+                    storage_state.get("plan_sha256") != plan.get("sha256")
+                    or storage_state.get("command_count") != len(expected_commands)
+                    or storage_state.get("completed") != list(range(len(expected_commands)))
+                    or storage_state.get("started") is not None
+                ):
+                    raise RuntimeError("the authorized storage stage is not fully checkpointed")
+                verify_root_mapping(plan["target"]["by_id"])
+                stage3 = config["stage3"]
+                archive = args.archive or (ROOT / stage3["filename"])
+                digests = args.digests or archive.with_name(archive.name + ".DIGESTS")
+                signature = args.signature or archive.with_name(archive.name + ".asc")
+                result = extract_verified_stage3(
+                    archive,
+                    digests,
+                    signature,
+                    args.keyring,
+                    Path("/mnt/gentoo"),
+                    state_dir,
+                    plan["target"]["by_id"],
+                    protected_serials=(
+                        configured_disk["serial"],
+                        config["storage"]["data_disk"]["serial"],
+                    ),
+                    expected_sha512=stage3["sha512"],
+                )
+                print(json.dumps(result, indent=2))
                 return 0
 
             plan = json.loads(args.plan.read_text(encoding="utf-8"))
@@ -86,7 +194,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(json.dumps(approval, indent=2, sort_keys=True))
             return 0
-        except (OSError, ValueError, RuntimeError, json.JSONDecodeError) as exc:
+        except (OSError, ValueError, RuntimeError, json.JSONDecodeError, subprocess.SubprocessError) as exc:
             print(f"{args.command} blocked: {exc}", file=sys.stderr)
             return 2
     return 2
