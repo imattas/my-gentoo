@@ -98,12 +98,19 @@ def setup_user(
     state_path = state_dir / "gentoo-user-state.json"
     event_path = state_dir / "gentoo-user-events.jsonl"
     command_digest = hashlib.sha256(json.dumps(commands, separators=(",", ":")).encode()).hexdigest()
+    resume_password = False
     if state_path.exists():
         journal = json.loads(state_path.read_text(encoding="utf-8"))
-        if journal.get("command_sha256") != command_digest:
+        if (
+            journal.get("command_sha256") != command_digest
+            or journal.get("storage_plan_sha256") != storage_plan["sha256"]
+            or journal.get("username") != username
+        ):
             raise RuntimeError("user setup checkpoint does not match this login")
         if journal.get("started") is not None:
-            raise RuntimeError("user setup was interrupted; inspect the account and set its password manually")
+            resume_password = journal.get("started") == 1 and journal.get("completed") == [0]
+            if not resume_password:
+                raise RuntimeError("user setup was interrupted before account creation completed")
         if journal.get("complete"):
             return {"status": "complete", "username": username, "state_file": str(state_path)}
     else:
@@ -124,9 +131,11 @@ def setup_user(
         capture_output=True,
         text=True,
     )
-    if existing.returncode == 0:
+    if existing.returncode == 0 and not resume_password:
         raise RuntimeError("that login already exists; inspect it and set its password manually")
-    if existing.returncode != 2:
+    if resume_password and existing.returncode != 0:
+        raise RuntimeError("password recovery requires the previously created login to exist")
+    if not resume_password and existing.returncode != 2:
         raise RuntimeError("could not safely determine whether that login already exists")
 
     while len(journal["completed"]) < len(commands):

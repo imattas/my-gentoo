@@ -32,10 +32,10 @@ The passphrase is not included in this report, state, or logs.
 - A deliberate wrong LUKS test key was rejected by
   `cryptsetup open --test-passphrase`; this read-only test did not create a
   mapping or alter the header.
-- Local unit suite after current installer fixes: `python -m pytest -q tests/unit` — 48 passed, 6 subtests.
+- Local unit suite after current installer fixes: `python -m pytest -q tests/unit` — 50 passed, 6 subtests.
   `python -m compileall -q installer tests` and `git diff --check` passed.
 
-## Active work and logs
+## Completed provisioning and current gate
 
 The `@world` command completed all 361 packages. The base command initially
 failed before merging because the firmware atom had changed category, then
@@ -55,16 +55,29 @@ builder's `logs/package-recovery-kernel-20261015T015334Z.log`. That generated
 the first UKI at
 `/mnt/gentoo/efi/EFI/Linux/b9e356061f78ffd6207d6a6f6ad01cea-6.18.54-gentoo-dist-bin.efi`.
 `objdump` confirmed nonempty Linux, initrd, and command-line PE sections. The
-base prerequisite command is being resumed; systemd-boot validation and VM boot
-are pending. Run state remains in the builder at
-`/var/lib/gentoo-installer-run9`.
+base package set and separate 237-package desktop set then completed. Live
+metadata rejected the old SDDM and NetworkManager applet atoms and required
+`video_cards_radeon` for `x11-libs/libdrm`; these were corrected. A Gentoo SysV
+hook caused offline `systemctl --root enable` to call unavailable
+`update-rc.d`; the installer now creates native systemd links and its recovery
+command accepts only the recorded failure with matching hashes.
+`validate_boot_assets()` returned `gentoo-production.efi`. The target has its
+graphical default, NetworkManager and SDDM links, and `rehearsal` wheel account.
+`visudo --check`, `getent`, `groups`, and `passwd -S` succeeded in the chroot.
+
+The LUKS test passphrase was not saved in the repository or rehearsal logs and
+is unavailable in the current session. Thus systemd-boot reboot, encrypted
+unlock, and interactive login remain unverified. Enter the original test key
+at the disposable VM console if it is known; otherwise recreate the disposable
+target with an operator-known test key and repeat the rehearsal. Run state and
+logs remain in `/var/lib/gentoo-installer-run9` in the builder.
 
 ## Not yet proven
 
-This rehearsal has not yet completed the base package install, passed the
-installer's UKI validation, rebooted from systemd-boot, unlocked LUKS from the
-initramfs, mounted Btrfs during target boot, reached systemd, or logged in as
-the configured user. KDE, audio, AMDGPU/RADV, 32-bit Vulkan, Steam, development,
-virtualization, backup restore, kernel rollback, and the failure-injection
-matrix remain unverified. Do not treat this report as authorization to install
-on a physical drive.
+This rehearsal completed package provisioning and installer UKI validation,
+but has not rebooted from systemd-boot, unlocked LUKS from the initramfs,
+mounted Btrfs during target boot, reached systemd, or interactively logged in
+as the configured user. KDE, networking, audio, AMDGPU/RADV, 32-bit Vulkan,
+Steam, development, virtualization, backup restore, kernel rollback, and the
+full failure-injection matrix remain unverified. Do not treat this report as
+authorization to install on a physical drive.

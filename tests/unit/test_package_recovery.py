@@ -8,31 +8,59 @@ from installer.provisioning.packages import recover_failed_package_checkpoint, r
 
 
 class FailedPackageCheckpointRecoveryTests(unittest.TestCase):
-    def _fixture(self, root: Path, log_text: str):
+    def _fixture(self, root: Path, log_text: str, package_set="base", command_index=1):
         state = root / "state"
         logs = state / "logs"
         logs.mkdir(parents=True)
         package_config = json.loads(
             (Path(__file__).resolve().parents[2] / "config" / "packages.yaml").read_text()
         )
-        commands = render_emerge_commands(package_config, "base", non_interactive=True)
-        state_path = state / "gentoo-packages-base.json"
+        commands = render_emerge_commands(package_config, package_set, non_interactive=True)
+        state_path = state / f"gentoo-packages-{package_set}.json"
         state_path.write_text(json.dumps({
-            "package_set": "base", "complete": False, "started": 1,
-            "completed": [0], "command_sha256": "old-digest", "storage_plan_sha256": "plan-hash",
+            "package_set": package_set, "complete": False, "started": command_index,
+            "completed": list(range(command_index)), "command_sha256": "old-digest", "storage_plan_sha256": "plan-hash",
         }))
         (state / "gentoo-storage-state.json").write_text(json.dumps({"plan_sha256": "plan-hash"}))
         (state / "gentoo-base-config-state.json").write_text(json.dumps({"storage_plan_sha256": "plan-hash"}))
         log = logs / "packages-base-command-1-attempt-02.log"
         log.write_text(log_text)
         events = [
-            {"event": "package-command-started", "package_set": "base", "index": 0, "argv": commands[0]},
-            {"event": "package-command-failed", "package_set": "base", "index": 1, "log": str(log)},
+            {"event": "package-command-started", "package_set": package_set, "index": 0, "argv": commands[0]},
+            {"event": "package-command-failed", "package_set": package_set, "index": command_index, "log": str(log)},
         ]
         (state / "gentoo-package-events.jsonl").write_text(
             "".join(json.dumps(event) + "\n" for event in events)
         )
         return state, package_config, log
+
+    def test_recovers_only_hash_confirmed_known_systemd_sysv_helper_failure(self):
+        failed = (
+            "Synchronizing state of NetworkManager.service with SysV service script.\n"
+            "Executing: /usr/lib/systemd/systemd-sysv-install --root=/mnt/gentoo enable NetworkManager\n"
+            "chroot: failed to run command '/usr/sbin/update-rc.d': No such file or directory\n"
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            state, package_config, log = self._fixture(
+                Path(temporary), failed, package_set="desktop"
+            )
+            digest = hashlib.sha256(log.read_bytes()).hexdigest()
+            with self.assertRaisesRegex(RuntimeError, "explicit repair path"):
+                recover_failed_package_checkpoint(
+                    "desktop", package_config, state, 1, digest, "plan-hash", non_interactive=True
+                )
+            result = recover_failed_package_checkpoint(
+                "desktop", package_config, state, 1, digest, "plan-hash",
+                non_interactive=True, desktop_repair=lambda: "systemd service links repaired\\n",
+            )
+            self.assertEqual(result["status"], "ready-to-resume")
+            journal = json.loads((state / "gentoo-packages-desktop.json").read_text())
+            self.assertIsNone(journal["started"])
+            events = [
+                json.loads(line)
+                for line in (state / "gentoo-package-events.jsonl").read_text().splitlines()
+            ]
+            self.assertTrue(any(event["event"] == "package-desktop-services-repaired" for event in events))
 
     def test_recovers_only_hash_confirmed_premerge_unavailable_atom_failure(self):
         with tempfile.TemporaryDirectory() as temporary:

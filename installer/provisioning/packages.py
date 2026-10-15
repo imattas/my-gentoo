@@ -58,13 +58,19 @@ def render_emerge_commands(
     elif package_set == "desktop":
         commands.append(
             [
-                "systemctl",
-                f"--root={target_root}",
-                "enable",
-                "NetworkManager.service",
-                "sddm.service",
+                "install", "-d",
+                f"{target_root}/etc/systemd/system/multi-user.target.wants",
+                f"{target_root}/etc/systemd/system",
             ]
         )
+        commands.append([
+            "ln", "-sfn", "/usr/lib/systemd/system/NetworkManager.service",
+            f"{target_root}/etc/systemd/system/multi-user.target.wants/NetworkManager.service",
+        ])
+        commands.append([
+            "ln", "-sfn", "/usr/lib/systemd/system/sddm.service",
+            f"{target_root}/etc/systemd/system/display-manager.service",
+        ])
         commands.append(["systemctl", f"--root={target_root}", "set-default", "graphical.target"])
     elif package_set == "gaming":
         commands = [
@@ -119,6 +125,7 @@ def recover_failed_package_checkpoint(
     *,
     non_interactive: bool = False,
     kernel_repair: Callable[[], str] | None = None,
+    desktop_repair: Callable[[], str] | None = None,
 ) -> dict[str, Any]:
     """Reopen a package checkpoint after a hash-reviewed safe failure and repair."""
     if package_set not in PACKAGE_SETS:
@@ -177,12 +184,20 @@ def recover_failed_package_checkpoint(
         and "Module 'btrfs' cannot be installed" in log_text
         and "emerge --config '=sys-kernel/gentoo-kernel-bin-" in log_text
     )
+    desktop_sysv_hook = (
+        package_set == "desktop"
+        and command_index == 1
+        and "systemd-sysv-install --root=/mnt/gentoo enable NetworkManager" in log_text
+        and "failed to run command '/usr/sbin/update-rc.d': No such file or directory" in log_text
+    )
     if (
         kernel_postinst
         and kernel_repair is None
     ):
         raise RuntimeError("known kernel post-install failure requires the explicit repair path")
-    if not kernel_postinst and (
+    if desktop_sysv_hook and desktop_repair is None:
+        raise RuntimeError("known desktop service failure requires the explicit repair path")
+    if not (kernel_postinst or desktop_sysv_hook) and (
         not (unavailable_atom or masked_atom)
         or ">>> emerge (" in log_text
         or "Compiling/Merging (" in log_text
@@ -211,6 +226,22 @@ def recover_failed_package_checkpoint(
             {
                 "time": datetime.now(timezone.utc).isoformat(),
                 "event": "package-kernel-postinst-repaired",
+                "package_set": package_set,
+                "index": command_index,
+                "failed_log_sha256": log_sha256,
+                "repair_log": str(repair_path),
+                "repair_log_sha256": hashlib.sha256(repair_log.encode()).hexdigest(),
+            },
+        )
+    if desktop_sysv_hook:
+        repair_log = desktop_repair()
+        repair_path = state_dir / "logs" / f"package-recovery-desktop-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}.log"
+        repair_path.write_text(repair_log, encoding="utf-8")
+        _append_event(
+            event_path,
+            {
+                "time": datetime.now(timezone.utc).isoformat(),
+                "event": "package-desktop-services-repaired",
                 "package_set": package_set,
                 "index": command_index,
                 "failed_log_sha256": log_sha256,

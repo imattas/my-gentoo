@@ -26,13 +26,12 @@ boot a disposable KVM guest, restore a sample file from an independent Restic
 repository, and boot rescue media to retrieve a file. Record evidence and
 results before describing those capabilities as working.
 
-The OVMF/QEMU disposable Ubuntu builder completed the 361 package Gentoo base
-world merge. The subsequent base utility set is being installed against the
-same disposable encrypted qcow2 target. Package resolution failures and
-checkpoint recovery evidence are in
-`rehearsal/gentoo-install-2026-10-14.md`. A project UKI has been generated and
-its PE sections and encrypted-root command line inspected. Installer UKI
-validation, systemd-boot reboot, encrypted unlock, first login, desktop
-services, and recovery scenarios remain unverified. Do not use the installer on a physical drive until the release gate
-in `readiness-report.md` and the live-media plan review and backup/recovery
-gates have been completed.
+The OVMF/QEMU disposable Ubuntu builder completed the Gentoo base world, base,
+and desktop package sets. The installer validates the generated production UKI,
+and the evidence archive records package failures and reviewed recoveries. The
+LUKS test passphrase is unavailable in the current rehearsal context, so
+systemd-boot reboot, encrypted unlock, first login, and desktop runtime remain
+unverified. Backup restore, kernel rollback, and several failure-injection
+scenarios also remain open. Do not use the installer on a physical drive until
+the release gate in `readiness-report.md` and the live-media plan review and
+backup/recovery gates have been completed.

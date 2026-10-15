@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -124,6 +125,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="repair only the recognized dracut Btrfs post-install failure before reopening its package checkpoint",
     )
+    recover_parser.add_argument(
+        "--repair-known-desktop-sysv-hook",
+        action="store_true",
+        help="repair the recognized missing update-rc.d systemd enable hook before reopening the desktop checkpoint",
+    )
     args = parser.parse_args(argv)
 
     if args.command == "inspect":
@@ -203,6 +209,7 @@ def main(argv: list[str] | None = None) -> int:
                     (expected["serial"], config["storage"]["data_disk"]["serial"]),
                 )
                 kernel_repair = None
+                desktop_repair = None
                 if args.repair_known_kernel_postinst:
                     if args.package_set != "base" or args.command_index != 1:
                         raise ValueError("kernel post-install recovery is limited to base package command 1")
@@ -256,6 +263,45 @@ def main(argv: list[str] | None = None) -> int:
                         return "".join(outputs)
 
                     kernel_repair = repair_kernel_postinst
+                if args.repair_known_desktop_sysv_hook:
+                    if args.package_set != "desktop" or args.command_index != 1:
+                        raise ValueError("desktop SysV hook recovery is limited to desktop package command 1")
+
+                    def repair_desktop_sysv_hook() -> str:
+                        target_root = Path("/mnt/gentoo")
+                        verify_root_mapping(storage_plan["target"]["by_id"])
+                        systemd_dir = target_root / "etc/systemd/system"
+                        wants_dir = systemd_dir / "multi-user.target.wants"
+                        for directory in (systemd_dir, wants_dir):
+                            if directory.is_symlink():
+                                raise RuntimeError(f"refusing symlinked systemd configuration directory: {directory}")
+                            directory.mkdir(parents=True, exist_ok=True)
+                        links = [
+                            (
+                                target_root / "usr/lib/systemd/system/NetworkManager.service",
+                                wants_dir / "NetworkManager.service",
+                            ),
+                            (
+                                target_root / "usr/lib/systemd/system/sddm.service",
+                                systemd_dir / "display-manager.service",
+                            ),
+                        ]
+                        output = []
+                        for unit, link in links:
+                            if not unit.is_file() or unit.is_symlink():
+                                raise RuntimeError(f"expected native systemd unit is missing or unsafe: {unit}")
+                            link_target = "/usr/lib/systemd/system/" + unit.name
+                            if link.is_symlink():
+                                if os.readlink(link) != link_target:
+                                    raise RuntimeError(f"refusing to replace conflicting systemd link: {link}")
+                            elif link.exists():
+                                raise RuntimeError(f"refusing to replace existing systemd path: {link}")
+                            else:
+                                link.symlink_to(link_target)
+                            output.append(f"{link} -> {link_target}\n")
+                        return "".join(output)
+
+                    desktop_repair = repair_desktop_sysv_hook
                 result = recover_failed_package_checkpoint(
                     args.package_set,
                     package_config,
@@ -265,6 +311,7 @@ def main(argv: list[str] | None = None) -> int:
                     storage_plan["sha256"],
                     non_interactive=args.non_interactive,
                     kernel_repair=kernel_repair,
+                    desktop_repair=desktop_repair,
                 )
                 print(json.dumps(result, indent=2))
                 return 0

@@ -58,3 +58,15 @@ a 70 MiB (73,231,872 byte) EFI UKI. `objdump -h` showed nonempty `.linux`, `.ini
 `.cmdline` sections; `objdump -s -j .cmdline` showed the expected LUKS UUID,
 root mapper, Btrfs `@` subvolume, and `rw`. This is UKI construction evidence;
 it is not proof that systemd-boot can load or boot it.
+
+## Desktop package provisioning and recovery
+
+`gentoo-desktop-evidence.tar.gz` contains captured desktop package resolution
+attempts, the successful 237-package merge log, and hash-reviewed recovery for
+the Gentoo SysV hook failure. Archive SHA-256:
+`299074985c3273f8c55888faae6c776a40e2aa593c5e21e415502f4806c9433c`. List
+members with `tar -tzf gentoo-desktop-evidence.tar.gz`; inspect one with
+`tar -xOf gentoo-desktop-evidence.tar.gz <path>`. The successful emerge log
+SHA-256 is `37685752c119ccaa5131f4ccada4216b03d845829cf1d937e6312c13a6bc26e1`.
+These logs prove package merge and recovery behavior only, not boot or desktop
+runtime behavior.
