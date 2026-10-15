@@ -1,9 +1,16 @@
-﻿$ python -m pytest -q tests/unit
-.......................................................                  [100%]
-55 passed, 6 subtests passed
+﻿Verification run summary
+
+$ python -m pytest -q tests/unit
+PASS: 55 tests, 6 subtests
+
 $ python -m unittest discover -s tests/integration -v
-11 tests passed
-$ python -m compileall -q installer tests
+PASS: 11 tests
+
+$ python -m compileall -q installer tests scripts/integration/storage-stage-loop.py
 PASS
+
+$ bash -n scripts/rescue.sh
+PASS
+
 $ git diff --check
 PASS

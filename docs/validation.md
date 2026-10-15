@@ -1,8 +1,9 @@
 # Validation record
 
 See [readiness-report.md](readiness-report.md) for the current feature-by-feature
-status and the production release gate. The full QEMU rehearsal is still
-unfinished; unit-test success is not install or boot evidence.
+status and the production release gate. Encrypted UEFI boot and first-login
+proof passed in a disposable QEMU VM; a full live-media-to-first-boot installer
+rehearsal remains unfinished. Unit-test success is not install or boot evidence.
 
 The Windows development checkout can validate renderers and mocked state
 transitions. It cannot prove the Linux live-media path, physical storage,
@@ -35,7 +36,8 @@ the temporary loop mapping; its image and mapping were removed. Logs and exact
 commands are linked from `readiness-report.md` and the rehearsal evidence
 index.
 
-The storage stage also has a destructive integration rehearsal on Ubuntu
+The storage stage and read-only rescue entrypoint also have a destructive
+integration rehearsal on Ubuntu
 22.04/WSL2: `wsl.exe -d Ubuntu-22.04 -u root -- bash -lc 'cd
 /mnt/c/Users/ian/Downloads/genroo && PYTHONPATH=. python3
 scripts/integration/storage-stage-loop.py'`. It creates an 8 GiB sparse file,
@@ -45,9 +47,15 @@ The harness refuses to proceed if its target identity or existing installer
 mounts/mapping are unsafe, and cleans up only resources it created. Because
 this WSL environment does not populate `/dev/disk/by-partlabel`, the harness
 confirms GPT labels with `blkid` and creates temporary test aliases to the
-verified loop partitions. This proves the storage stage on a disposable loop
-device; it does not replace full live-media installer execution or validate
-physical-drive/firmware behavior. The captured run is
+verified loop partitions. It then closed the mapping and invoked
+`scripts/rescue.sh` against the same disposable encrypted filesystem. The
+script mounted Btrfs read-only, retrieved a fixture file, and refused a
+mismatched target serial without opening a mapping. The harness stubs only the
+QEMU-style model/serial fields absent from loop devices and injects the fixture
+key through a temporary wrapper; partitioning, encryption, filesystems,
+mounts, and retrieval use real Linux tools. This does not constitute a booted
+recovery-media test or validate physical-drive/firmware behavior. The captured
+run is
 [`storage-stage-loop.log`](rehearsal/evidence/storage-stage-loop.log).
 
 The previous-production UKI preservation and rollback CLI have integration

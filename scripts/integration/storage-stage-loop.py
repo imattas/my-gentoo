@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import secrets
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -19,6 +20,7 @@ from installer.stages.storage import apply_storage_plan
 
 ROOT = Path(__file__).resolve().parents[2]
 MOUNTPOINTS = (
+    Path("/mnt/gentoo-rescue"),
     Path("/mnt/gentoo/efi"),
     Path("/mnt/gentoo/var/log"),
     Path("/mnt/gentoo/.snapshots"),
@@ -228,6 +230,110 @@ def verify_completed_stage(loopdev: str, by_id: Path, config: dict) -> None:
         print(f"PASS: {target} mounted from {subvolume}")
 
 
+def rehearse_readonly_rescue(
+    loopdev: str, temporary: Path, config: dict, keyfile: Path
+) -> None:
+    marker = Path("/mnt/gentoo/recovery-marker.txt")
+    marker.write_text("disposable rescue fixture\n", encoding="utf-8")
+    rescue_config = temporary / "rescue-workstation.json"
+    rescue_config.write_text(json.dumps(config), encoding="utf-8")
+    shim_dir = temporary / "rescue-command-shims"
+    shim_dir.mkdir()
+
+    real_lsblk = shutil.which("lsblk")
+    real_cryptsetup = shutil.which("cryptsetup")
+    if not real_lsblk or not real_cryptsetup:
+        raise RuntimeError("rescue rehearsal requires lsblk and cryptsetup")
+    (shim_dir / "lsblk").write_text(
+        "#!/usr/bin/env bash\n"
+        "if [[ \"$1\" == -no && \"$2\" == PKNAME ]]; then\n"
+        "  device=$(readlink -f -- \"$3\")\n"
+        "  name=${device##*/}\n"
+        "  printf '%s\\n' \"${name%p2}\"\n"
+        "elif [[ \"$1\" == -dn && \"$2\" == -o && \"$3\" == MODEL ]]; then\n"
+        "  printf '%s\\n' \"$GENTOO_RESCUE_TEST_MODEL\"\n"
+        "elif [[ \"$1\" == -dn && \"$2\" == -o && \"$3\" == SERIAL ]]; then\n"
+        "  printf '%s\\n' \"$GENTOO_RESCUE_TEST_SERIAL\"\n"
+        "else\n"
+        f"  exec {real_lsblk!r} \"$@\"\n"
+        "fi\n",
+        encoding="utf-8",
+    )
+    (shim_dir / "cryptsetup").write_text(
+        "#!/usr/bin/env bash\n"
+        "if [[ \"$1\" == open ]]; then\n"
+        "  shift\n"
+        f"  exec {real_cryptsetup!r} open --key-file \"$GENTOO_RESCUE_TEST_KEY\" \"$@\"\n"
+        "fi\n"
+        f"exec {real_cryptsetup!r} \"$@\"\n",
+        encoding="utf-8",
+    )
+    for shim in shim_dir.iterdir():
+        shim.chmod(0o700)
+
+    cleanup_mounts(loopdev)
+    require_loop_mapper(loopdev)
+    run(["cryptsetup", "close", "gentoo-root"])
+    rescue_env = os.environ.copy()
+    rescue_env.update(
+        {
+            "PATH": f"{shim_dir}:{rescue_env['PATH']}",
+            "GENTOO_WORKSTATION_CONFIG": str(rescue_config),
+            "GENTOO_RESCUE_TEST_KEY": str(keyfile),
+            "GENTOO_RESCUE_TEST_MODEL": config["storage"]["system_target"]["model"],
+            "GENTOO_RESCUE_TEST_SERIAL": config["storage"]["system_target"]["serial"],
+        }
+    )
+    result = subprocess.run(
+        ["bash", str(ROOT / "scripts" / "rescue.sh")],
+        cwd=ROOT,
+        env=rescue_env,
+        check=True,
+        text=True,
+        capture_output=True,
+    )
+    if "mounted read-only" not in result.stdout:
+        raise RuntimeError("rescue script did not report a read-only recovery mount")
+    options = run(
+        ["findmnt", "--noheadings", "--output", "OPTIONS", "--target", "/mnt/gentoo-rescue"],
+        capture=True,
+    ).stdout.strip().split(",")
+    source = run(
+        ["findmnt", "--noheadings", "--output", "SOURCE", "--target", "/mnt/gentoo-rescue"],
+        capture=True,
+    ).stdout.strip().split("[", 1)[0]
+    if "ro" not in options or os.path.realpath(source) != os.path.realpath(ROOT_MAPPER):
+        raise RuntimeError("rescue script did not mount the disposable encrypted root read-only")
+    restored = Path("/mnt/gentoo-rescue/recovery-marker.txt").read_text(encoding="utf-8")
+    if restored != "disposable rescue fixture\n":
+        raise RuntimeError("rescue mount did not expose the expected recovery fixture")
+    print("PASS: rescue script unlocked the disposable root read-only and retrieved its fixture")
+    run(["umount", "/mnt/gentoo-rescue"])
+    require_loop_mapper(loopdev)
+    run(["cryptsetup", "close", "gentoo-root"])
+    wrong_identity_env = rescue_env.copy()
+    wrong_identity_env["GENTOO_RESCUE_TEST_SERIAL"] = "GQ-UNAUTHORIZED-DISK"
+    refused = subprocess.run(
+        ["bash", str(ROOT / "scripts" / "rescue.sh")],
+        cwd=ROOT,
+        env=wrong_identity_env,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    if refused.returncode == 0 or "identity mismatch; refusing" not in refused.stderr:
+        raise RuntimeError("rescue script did not refuse a mismatched target disk identity")
+    status = subprocess.run(
+        [real_cryptsetup, "status", "gentoo-root"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if status.returncode == 0:
+        raise RuntimeError("rescue script opened a mapping after refusing the target identity")
+    print("PASS: rescue script refused a mismatched disk identity without opening a mapping")
+
+
 def cleanup_mounts(loopdev: str) -> None:
     for path in MOUNTPOINTS:
         probe = subprocess.run(["mountpoint", "--quiet", str(path)], check=False)
@@ -344,6 +450,7 @@ def main() -> int:
                 raise RuntimeError(f"storage stage returned {result['status']}")
             verify_completed_stage(loopdev, by_id, config)
             print(f"PASS: checkpoint state and event log persisted in {state_dir}")
+            rehearse_readonly_rescue(loopdev, temporary_path, config, keyfile)
             return 0
         finally:
             if loopdev is not None:

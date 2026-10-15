@@ -233,9 +233,10 @@ guarded `kernel-rollback` CLI was not invoked inside Gentoo. Evidence SHA-256:
 ## Current full test and static-check run
 
 `readiness-verification-current.log` records the latest unit and integration
-test runs plus compileall and whitespace checks. It reports 55 unit tests, 6
-unit subtests, and 11 integration tests passing. SHA-256:
-`bfe693fbbdf73160f937634ccd7dbeeb2bdc0ac431783e4966886b50583bc6b`.
+test runs plus compileall, rescue-script syntax, and whitespace checks. It
+reports 55 unit tests, 6 unit subtests, and 11 integration tests passing.
+SHA-256:
+`82dd86adfaa317946fdde62fa87665479181c1fcf27dbce5f64c5caf04f96ada`.
 
 The two `recover-package` integration cases execute the CLI against a temporary
 state directory and a Gentoo-style unavailable-atom log. The correct confirmed
@@ -248,13 +249,18 @@ leaves it closed. Neither case executes Portage or touches a block device.
 8 GiB sparse file attached as a fresh loop device under Ubuntu 22.04/WSL2. GPT
 partitioning, LUKS2 formatting/opening, Btrfs and FAT32 formatting, all four
 Btrfs subvolumes, all planned mounts, and checkpoint/event-log persistence
-passed. The harness cleans its temporary file, mounts, mapper, aliases, and
-loop device. WSL did not provide by-partlabel udev links, so the harness
-created temporary aliases only after direct GPT-label verification on the
-test loop partitions. This is real storage-stage integration evidence, not a
-full installation rehearsal or physical hardware validation.
+passed. The actual `scripts/rescue.sh` then reopened that LUKS2 filesystem,
+mounted Btrfs read-only, and retrieved a fixture file. A second invocation
+with a mismatched disk serial refused before opening a mapper. The harness
+cleans its temporary file, mounts, mapper, aliases, and loop device. WSL did
+not provide by-partlabel udev links, so the harness created temporary aliases
+only after direct GPT-label verification on the test loop partitions. It
+stubs the loop device's absent model/serial fields and supplies the test key
+through a temporary command wrapper. This proves storage and the rescue script
+on a disposable filesystem, not booted recovery media, an independent backup,
+a full installation rehearsal, or physical hardware.
 Reproduce it with:
 `wsl.exe -d Ubuntu-22.04 -u root -- bash -lc 'cd
 /mnt/c/Users/ian/Downloads/genroo && PYTHONPATH=. python3
 scripts/integration/storage-stage-loop.py'`. SHA-256:
-`a4e0a3686fb409c5efda2ba120661de1c8599bea1650958a0669c154d41a0b8c`.
+`2d3e451fc643cc9ec9e65ad2b5376886879117dc6567bdd8910cac475cc33017`.

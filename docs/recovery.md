@@ -13,15 +13,23 @@ Boot the verified live media, open a root shell, and run:
 bash scripts/rescue.sh
 ```
 
-The script opens only the partition labeled `GENTOO-CRYPTROOT` in read-only
-mode and mounts Btrfs subvolume `@` at `/mnt/gentoo-rescue`. It refuses to
-reuse an already open `gentoo-root` mapping. Copy needed files to an independently
-identified backup disk. To finish, run `umount /mnt/gentoo-rescue` and
+The script reads the expected system-disk model/serial and protected data-disk
+serial from `config/workstation.yaml`, discovers the labeled partition's
+parent at runtime, and compares the observed identity before opening anything.
+If the recovery media has the config at another location, set
+`GENTOO_WORKSTATION_CONFIG` to that reviewed config file. The script opens only
+the partition labeled `GENTOO-CRYPTROOT` in read-only mode and mounts Btrfs
+subvolume `@` at `/mnt/gentoo-rescue`. It refuses to reuse an already open
+`gentoo-root` mapping. Copy needed files to an independently identified backup
+disk. To finish, run `umount /mnt/gentoo-rescue` and
 `cryptsetup close gentoo-root`.
 
 If the labels are absent or the mapping fails, stop and inspect with `lsblk -f`
 and `cryptsetup luksDump`. Do not run formatting, repair, or write-mode mount
-commands as part of initial diagnosis.
+commands as part of initial diagnosis. The rescue script passed an encrypted
+disposable-loop rehearsal that retrieved a fixture read-only and refused a
+wrong serial; booted recovery media and copying to an independent backup
+device remain untested.
 
 ## Failed production kernel update
 
