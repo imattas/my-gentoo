@@ -35,6 +35,21 @@ the temporary loop mapping; its image and mapping were removed. Logs and exact
 commands are linked from `readiness-report.md` and the rehearsal evidence
 index.
 
+The storage stage also has a destructive integration rehearsal on Ubuntu
+22.04/WSL2: `wsl.exe -d Ubuntu-22.04 -u root -- bash -lc 'cd
+/mnt/c/Users/ian/Downloads/genroo && PYTHONPATH=. python3
+scripts/integration/storage-stage-loop.py'`. It creates an 8 GiB sparse file,
+attaches only that file through a newly allocated loop device, then executes
+the real GPT, LUKS2, Btrfs, FAT32, subvolume, mount, and checkpoint operations.
+The harness refuses to proceed if its target identity or existing installer
+mounts/mapping are unsafe, and cleans up only resources it created. Because
+this WSL environment does not populate `/dev/disk/by-partlabel`, the harness
+confirms GPT labels with `blkid` and creates temporary test aliases to the
+verified loop partitions. This proves the storage stage on a disposable loop
+device; it does not replace full live-media installer execution or validate
+physical-drive/firmware behavior. The captured run is
+[`storage-stage-loop.log`](rehearsal/evidence/storage-stage-loop.log).
+
 The previous-production UKI preservation and rollback CLI have integration
 tests on temporary EFI files, and both current systemd-boot entries were
 rehearsed in QEMU to the LUKS prompt using a disposable qcow2 overlay. The

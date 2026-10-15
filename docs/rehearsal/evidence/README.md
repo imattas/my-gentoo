@@ -233,11 +233,28 @@ guarded `kernel-rollback` CLI was not invoked inside Gentoo. Evidence SHA-256:
 ## Current full test and static-check run
 
 `readiness-verification-current.log` records the latest unit and integration
-test runs plus compileall and whitespace checks. It reports 53 unit tests, 6
+test runs plus compileall and whitespace checks. It reports 55 unit tests, 6
 unit subtests, and 11 integration tests passing. SHA-256:
-`c5bf4a050d7083c1a173690603fa16c6081f6d30558dd02fc2adb519bf7e2af6`.
+`bfe693fbbdf73160f937634ccd7dbeeb2bdc0ac431783e4966886b50583bc6b`.
 
 The two `recover-package` integration cases execute the CLI against a temporary
 state directory and a Gentoo-style unavailable-atom log. The correct confirmed
 log digest reopens the failed checkpoint; an incorrect digest is refused and
 leaves it closed. Neither case executes Portage or touches a block device.
+
+## Destructive storage-stage loop rehearsal
+
+`storage-stage-loop.log` captures the actual storage stage running against an
+8 GiB sparse file attached as a fresh loop device under Ubuntu 22.04/WSL2. GPT
+partitioning, LUKS2 formatting/opening, Btrfs and FAT32 formatting, all four
+Btrfs subvolumes, all planned mounts, and checkpoint/event-log persistence
+passed. The harness cleans its temporary file, mounts, mapper, aliases, and
+loop device. WSL did not provide by-partlabel udev links, so the harness
+created temporary aliases only after direct GPT-label verification on the
+test loop partitions. This is real storage-stage integration evidence, not a
+full installation rehearsal or physical hardware validation.
+Reproduce it with:
+`wsl.exe -d Ubuntu-22.04 -u root -- bash -lc 'cd
+/mnt/c/Users/ian/Downloads/genroo && PYTHONPATH=. python3
+scripts/integration/storage-stage-loop.py'`. SHA-256:
+`a4e0a3686fb409c5efda2ba120661de1c8599bea1650958a0669c154d41a0b8c`.

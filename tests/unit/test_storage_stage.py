@@ -126,6 +126,57 @@ class StorageStageTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             next_unstarted_command(PLAN["commands_for_review_only"], journal)
 
+    def test_partition_labels_may_be_unavailable_before_partition_probe(self):
+        from installer.stages.storage import _is_expected_partition_settling
+
+        report = workstation_report()
+        plan = render_storage_plan(report, CONFIG, BY_ID)
+        state = {
+            "path": "/dev/nvme0n1",
+            "model": CONFIG["storage"]["system_target"]["model"],
+            "serial": CONFIG["storage"]["system_target"]["serial"],
+            "size_bytes": report["block_devices"][0]["size"],
+            "partition_table": "gpt",
+            "filesystem": None,
+            "mountpoints": [],
+            "children": [
+                {"path": "/dev/nvme0n1p1", "partlabel": None, "size": 2 * 1024**3, "fstype": None, "mountpoints": []},
+                {"path": "/dev/nvme0n1p2", "partlabel": None, "size": 1_800_000_000_000, "fstype": None, "mountpoints": []},
+            ],
+        }
+
+        self.assertTrue(
+            _is_expected_partition_settling(
+                state,
+                [0, 1, 2, 3],
+                4,
+                plan,
+                plan["commands_for_review_only"],
+            )
+        )
+
+    def test_partition_labels_must_bind_esp_and_root_to_planned_partition_numbers(self):
+        from installer.stages.storage import _assert_expected_partition_table
+
+        report = workstation_report()
+        plan = render_storage_plan(report, CONFIG, BY_ID)
+        state = {
+            "path": "/dev/nvme0n1",
+            "model": CONFIG["storage"]["system_target"]["model"],
+            "serial": CONFIG["storage"]["system_target"]["serial"],
+            "size_bytes": report["block_devices"][0]["size"],
+            "partition_table": "gpt",
+            "filesystem": None,
+            "mountpoints": [],
+            "children": [
+                {"path": "/dev/nvme0n1p1", "partlabel": "GENTOO-CRYPTROOT", "size": 2 * 1024**3, "fstype": None, "mountpoints": []},
+                {"path": "/dev/nvme0n1p2", "partlabel": "GENTOO-ESP", "size": 1_800_000_000_000, "fstype": None, "mountpoints": []},
+            ],
+        }
+
+        with self.assertRaisesRegex(RuntimeError, "partition label does not match the authorized layout"):
+            _assert_expected_partition_table(state, plan)
+
     def test_completed_commands_are_skipped_when_resuming(self):
         journal = {"completed": [0], "started": None}
         self.assertIsNone(next_unstarted_command(PLAN["commands_for_review_only"], journal))
@@ -250,7 +301,11 @@ class StorageStageTests(unittest.TestCase):
         runner = Mock()
         with tempfile.TemporaryDirectory() as temporary:
             result_dir = Path(temporary)
-            with patch("installer.stages.storage.platform.system", return_value="Linux"), contextlib.redirect_stdout(io.StringIO()):
+            with (
+                patch("installer.stages.storage.platform.system", return_value="Linux"),
+                patch("installer.stages.storage._assert_partition_aliases_match_target"),
+                contextlib.redirect_stdout(io.StringIO()),
+            ):
                 result = apply_storage_plan(
                     plan,
                     approval,

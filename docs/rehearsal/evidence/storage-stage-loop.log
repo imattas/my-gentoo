@@ -1,0 +1,77 @@
+Running: sgdisk --zap-all /dev/disk/by-id/gentoo-storage-test-b54e0c399378
+Creating new GPT entries in memory.
+GPT data structures destroyed! You may now partition the disk using fdisk or
+other utilities.
+Running: partprobe /dev/disk/by-id/gentoo-storage-test-b54e0c399378
+Running: udevadm settle
+Running: sgdisk --new=1:0:+2G --typecode=1:EF00 --change-name=1:GENTOO-ESP --new=2:0:0 --typecode=2:8309 --change-name=2:GENTOO-CRYPTROOT /dev/disk/by-id/gentoo-storage-test-b54e0c399378
+Creating new GPT entries in memory.
+Setting name!
+partNum is 0
+Setting name!
+partNum is 1
+The operation has completed successfully.
+Running: partprobe /dev/disk/by-id/gentoo-storage-test-b54e0c399378
+Running: udevadm settle
+Running: cryptsetup luksFormat --type luks2 /dev/disk/by-partlabel/GENTOO-CRYPTROOT
+Running: udevadm settle
+Running: cryptsetup open /dev/disk/by-partlabel/GENTOO-CRYPTROOT gentoo-root
+Running: udevadm settle
+Running: mkfs.btrfs --label gentoo-root /dev/mapper/gentoo-root
+btrfs-progs v5.16.2
+See http://btrfs.wiki.kernel.org for more information.
+
+NOTE: several default settings have changed in version 5.15, please make sure
+      this does not affect your deployments:
+      - DUP for metadata (-m dup)
+      - enabled no-holes (-O no-holes)
+      - enabled free-space-tree (-R free-space-tree)
+
+Label:              gentoo-root
+UUID:               45d118d4-002f-4f95-a6c0-4a0117979635
+Node size:          16384
+Sector size:        4096
+Filesystem size:    5.98GiB
+Block group profiles:
+  Data:             single            8.00MiB
+  Metadata:         DUP             256.00MiB
+  System:           DUP               8.00MiB
+SSD detected:       no
+Zoned device:       no
+Incompat features:  extref, skinny-metadata, no-holes
+Runtime features:   free-space-tree
+Checksum:           crc32c
+Number of devices:  1
+Devices:
+   ID        SIZE  PATH
+    1     5.98GiB  /dev/mapper/gentoo-root
+
+Running: udevadm settle
+Running: mkfs.fat -F 32 -n GENTOO-ESP /dev/disk/by-partlabel/GENTOO-ESP
+mkfs.fat 4.2 (2021-01-31)
+Running: udevadm settle
+Running: mkdir --parents /mnt/gentoo-top
+Running: mount -o subvolid=5 /dev/mapper/gentoo-root /mnt/gentoo-top
+Running: btrfs subvolume create /mnt/gentoo-top/@
+Create subvolume '/mnt/gentoo-top/@'
+Running: btrfs subvolume create /mnt/gentoo-top/@home
+Create subvolume '/mnt/gentoo-top/@home'
+Running: btrfs subvolume create /mnt/gentoo-top/@snapshots
+Create subvolume '/mnt/gentoo-top/@snapshots'
+Running: btrfs subvolume create /mnt/gentoo-top/@log
+Create subvolume '/mnt/gentoo-top/@log'
+Running: umount /mnt/gentoo-top
+Running: mkdir --parents /mnt/gentoo
+Running: mount -o compress=zstd:3,noatime,subvol=@ /dev/mapper/gentoo-root /mnt/gentoo
+Running: mkdir --parents /mnt/gentoo/home /mnt/gentoo/.snapshots /mnt/gentoo/var/log /mnt/gentoo/efi
+Running: mount -o compress=zstd:3,noatime,subvol=@home /dev/mapper/gentoo-root /mnt/gentoo/home
+Running: mount -o compress=zstd:3,noatime,subvol=@snapshots /dev/mapper/gentoo-root /mnt/gentoo/.snapshots
+Running: mount -o compress=zstd:3,noatime,subvol=@log /dev/mapper/gentoo-root /mnt/gentoo/var/log
+Running: mount /dev/disk/by-partlabel/GENTOO-ESP /mnt/gentoo/efi
+PASS: storage stage partitioned, encrypted, formatted, and mounted the disposable loop image
+PASS: /mnt/gentoo mounted from @
+PASS: /mnt/gentoo/home mounted from @home
+PASS: /mnt/gentoo/.snapshots mounted from @snapshots
+PASS: /mnt/gentoo/var/log mounted from @log
+PASS: /mnt/gentoo/efi mounted from GENTOO-ESP
+PASS: checkpoint state and event log persisted in /tmp/gentoo-storage-loop-l_483yep/state

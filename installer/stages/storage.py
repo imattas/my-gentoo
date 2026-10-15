@@ -132,25 +132,87 @@ def _assert_empty_partition_table(state: dict[str, Any], plan: dict[str, Any]) -
         raise RuntimeError("target is not in the expected blank state after the authorized wipe")
 
 
+def _partition_label(child: dict[str, Any]) -> str | None:
+    label = child.get("partlabel")
+    if label:
+        return str(label)
+    path = child.get("path")
+    if not path:
+        return None
+    probe = subprocess.run(
+        ["blkid", "--probe", "--output", "export", str(path)],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if probe.returncode:
+        return None
+    properties = dict(
+        line.split("=", 1) for line in probe.stdout.splitlines() if "=" in line
+    )
+    return properties.get("PART_ENTRY_NAME")
+
+
 def _assert_expected_partition_table(
-    state: dict[str, Any], plan: dict[str, Any], *, require_unformatted: bool = True
+    state: dict[str, Any],
+    plan: dict[str, Any],
+    *,
+    require_unformatted: bool = True,
+    require_labels: bool = True,
 ) -> None:
     """Validate the deliberate GPT transition while kernel partition data settles."""
     _assert_target_identity(state, plan)
     children = state.get("children", [])
-    labels = {child.get("partlabel") for child in children}
     if (
         state.get("partition_table") != "gpt"
-        or labels != {"GENTOO-ESP", "GENTOO-CRYPTROOT"}
         or len(children) != 2
         or (require_unformatted and any(child.get("fstype") for child in children))
         or any(child.get("mountpoints") for child in children)
         or state.get("mountpoints")
     ):
         raise RuntimeError("observed partition table differs from the authorized GPT layout")
-    esp = next(child for child in children if child.get("partlabel") == "GENTOO-ESP")
-    if esp.get("size") != 2 * 1024**3:
+
+    disk_path = str(plan["target"]["observed_device_path"])
+    disk_name = os.path.basename(disk_path)
+    partition_separator = "p" if disk_name[-1:].isdigit() else ""
+    expected_paths = {
+        1: disk_path + partition_separator + "1",
+        2: disk_path + partition_separator + "2",
+    }
+    by_path = {child.get("path"): child for child in children}
+    if any(path not in by_path for path in expected_paths.values()):
+        raise RuntimeError("observed GPT partitions do not match the planned partition numbers")
+    esp = by_path[expected_paths[1]]
+    root = by_path[expected_paths[2]]
+    if esp.get("size") != 2 * 1024**3 or not isinstance(root.get("size"), int) or root["size"] <= 0:
         raise RuntimeError("observed EFI partition size differs from the authorized plan")
+    if require_labels:
+        if _partition_label(esp) != "GENTOO-ESP" or _partition_label(root) != "GENTOO-CRYPTROOT":
+            raise RuntimeError("partition label does not match the authorized layout")
+    elif any(
+        child.get("partlabel") not in (None, expected_label)
+        for child, expected_label in ((esp, "GENTOO-ESP"), (root, "GENTOO-CRYPTROOT"))
+    ):
+        raise RuntimeError("partition label does not match the authorized layout")
+
+
+def _assert_partition_aliases_match_target(
+    state: dict[str, Any],
+    plan: dict[str, Any],
+    *,
+    realpath: Callable[[str], str] = os.path.realpath,
+) -> None:
+    _assert_expected_partition_table(state, plan)
+    disk_path = str(plan["target"]["observed_device_path"])
+    disk_name = os.path.basename(disk_path)
+    partition_separator = "p" if disk_name[-1:].isdigit() else ""
+    expected = {
+        "/dev/disk/by-partlabel/GENTOO-ESP": disk_path + partition_separator + "1",
+        "/dev/disk/by-partlabel/GENTOO-CRYPTROOT": disk_path + partition_separator + "2",
+    }
+    for alias, partition in expected.items():
+        if realpath(alias) != realpath(partition):
+            raise RuntimeError(f"partition identity link does not resolve to the authorized target: {alias}")
 
 
 def _is_expected_partition_settling(
@@ -169,7 +231,7 @@ def _is_expected_partition_settling(
     awaiting_partition_probe = completed == [0, 1, 2, 3] and next_index == 4
     awaiting_partition_settle = completed == [0, 1, 2, 3, 4] and next_index == 5
     if awaiting_partition_probe or awaiting_partition_settle:
-        _assert_expected_partition_table(state, plan)
+        _assert_expected_partition_table(state, plan, require_labels=False)
         return True
     if (
         completed
@@ -314,6 +376,8 @@ def apply_storage_plan(
     while (index := next_unstarted_command(commands, journal)) is not None:
         current_report = report_provider(config)
         state_now = _exact_device_state(current_report, plan)
+        if journal["completed"] == [0, 1, 2, 3, 4, 5] and index == 6:
+            _assert_partition_aliases_match_target(state_now, plan)
         if not journal["completed"] and state_now != plan["observed_state"]:
             raise RuntimeError("target partition or mount state changed after planning")
         if journal["completed"] and state_now != journal.get("last_verified_device_state"):
