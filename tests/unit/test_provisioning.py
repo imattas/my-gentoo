@@ -16,6 +16,7 @@ from installer.provisioning.packages import render_emerge_commands
 from installer.provisioning.packages import (
     _is_unified_kernel_image,
     _uki_has_command_line,
+    stage_experimental_uki,
     validate_boot_assets,
 )
 
@@ -255,6 +256,92 @@ Available profile symlink targets:
                 "efi /EFI/Linux/gentoo-fallback.efi",
                 (loader / "entries/gentoo-fallback.conf").read_text(encoding="utf-8"),
             )
+
+    def test_experimental_uki_staging_keeps_production_default_and_images_untouched(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "target"
+            self._prepare_boot_root(root)
+            efi = root / "efi"
+            linux_dir = efi / "EFI/Linux"
+            systemd_dir = efi / "EFI/systemd"
+            linux_dir.mkdir(parents=True)
+            systemd_dir.mkdir(parents=True)
+            production = efi_application_image()
+            fallback = efi_application_image()
+            (linux_dir / "gentoo-production.efi").write_bytes(production)
+            (linux_dir / "gentoo-fallback.efi").write_bytes(fallback)
+            (systemd_dir / "systemd-bootx64.efi").write_bytes(efi_application_image())
+            loader = efi / "loader"
+            entries = loader / "entries"
+            entries.mkdir(parents=True)
+            (loader / "loader.conf").write_text("default gentoo-production\ntimeout 5\n")
+            production_entry = (
+                "title Gentoo Workstation (production)\n"
+                "efi /EFI/Linux/gentoo-production.efi\n"
+            )
+            fallback_entry = (
+                "title Gentoo Workstation (previous production kernel)\n"
+                "efi /EFI/Linux/gentoo-fallback.efi\n"
+            )
+            (entries / "gentoo-production.conf").write_text(production_entry)
+            (entries / "gentoo-fallback.conf").write_text(fallback_entry)
+            candidate = Path(temporary) / "candidate.efi"
+            experimental = efi_application_image()
+            experimental = bytearray(experimental)
+            experimental[0x200:0x206] = b"expimg"
+            candidate.write_bytes(experimental)
+
+            result = stage_experimental_uki(root, candidate)
+            self.assertEqual(stage_experimental_uki(root, candidate), result)
+            self.assertEqual(validate_boot_assets(root), ["gentoo-production.efi", "gentoo-fallback.efi"])
+
+            experimental_path = linux_dir / "gentoo-experimental.efi"
+            experimental_entry = entries / "gentoo-experimental.conf"
+            self.assertEqual(result, "gentoo-experimental.efi")
+            self.assertEqual(experimental_path.read_bytes(), candidate.read_bytes())
+            self.assertEqual(
+                experimental_entry.read_text(encoding="utf-8"),
+                "title Gentoo Workstation (experimental kernel)\n"
+                "efi /EFI/Linux/gentoo-experimental.efi\n",
+            )
+            self.assertEqual((loader / "loader.conf").read_text(), "default gentoo-production\ntimeout 5\n")
+            self.assertEqual((entries / "gentoo-production.conf").read_text(), production_entry)
+            self.assertEqual((entries / "gentoo-fallback.conf").read_text(), fallback_entry)
+            self.assertEqual((linux_dir / "gentoo-production.efi").read_bytes(), production)
+            self.assertEqual((linux_dir / "gentoo-fallback.efi").read_bytes(), fallback)
+            with self.assertRaisesRegex(ValueError, "gentoo-experimental"):
+                stage_experimental_uki(root, candidate, "custom-kernel")
+
+    def test_experimental_uki_staging_rejects_invalid_or_stale_candidate_without_writes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "target"
+            self._prepare_boot_root(root)
+            efi = root / "efi"
+            linux_dir = efi / "EFI/Linux"
+            systemd_dir = efi / "EFI/systemd"
+            linux_dir.mkdir(parents=True)
+            systemd_dir.mkdir(parents=True)
+            (linux_dir / "gentoo-production.efi").write_bytes(efi_application_image())
+            (systemd_dir / "systemd-bootx64.efi").write_bytes(efi_application_image())
+            loader = efi / "loader"
+            (loader / "entries").mkdir(parents=True)
+            (loader / "loader.conf").write_text("default gentoo-production\ntimeout 5\n")
+            candidate = Path(temporary) / "stale.efi"
+            stale_cmdline = _UKI_CMDLINE.replace("12345678", "aaaaaaaa")
+            image = bytearray(efi_application_image())
+            cmdline_offset = 0x200 + 2 * 0x100
+            cmdline_payload = stale_cmdline.encode() + b"\0"
+            image[cmdline_offset : cmdline_offset + len(cmdline_payload)] = cmdline_payload
+            cmdline_section = 0x138 + 2 * 40
+            struct.pack_into("<I", image, cmdline_section + 16, len(cmdline_payload))
+            candidate.write_bytes(image)
+
+            with self.assertRaisesRegex(RuntimeError, "experimental UKI"):
+                stage_experimental_uki(root, candidate)
+
+            self.assertFalse((linux_dir / "gentoo-experimental.efi").exists())
+            self.assertFalse((loader / "entries/gentoo-experimental.conf").exists())
+            self.assertEqual((loader / "loader.conf").read_text(), "default gentoo-production\ntimeout 5\n")
 
     def test_kernel_rollback_restores_only_a_valid_fallback_uki(self):
         from installer.provisioning.packages import rollback_production_uki

@@ -275,6 +275,16 @@ def rehearse_guarded_kernel_rollback(
     linux = esp / "EFI/Linux"
     systemd.mkdir(parents=True, exist_ok=True)
     linux.mkdir(parents=True, exist_ok=True)
+    entries = esp / "loader/entries"
+    entries.mkdir(parents=True, exist_ok=True)
+    (esp / "loader/loader.conf").write_text(
+        "default gentoo-production\ntimeout 5\n", encoding="utf-8"
+    )
+    (entries / "gentoo-production.conf").write_text(
+        "title Gentoo Workstation (production)\n"
+        "efi /EFI/Linux/gentoo-production.efi\n",
+        encoding="utf-8",
+    )
     known_good = make_test_uki(command_line, b"known-good disposable kernel")
     (systemd / "systemd-bootx64.efi").write_bytes(known_good)
     (linux / "gentoo-fallback.efi").write_bytes(known_good)
@@ -336,6 +346,63 @@ def rehearse_guarded_kernel_rollback(
     if production.read_bytes() != known_good:
         raise RuntimeError("guarded kernel rollback CLI changed the UKI after identity refusal")
     print("PASS: guarded kernel-rollback CLI refused a mismatched disk serial without writing")
+
+    candidate = temporary / "experimental-candidate.efi"
+    candidate.write_bytes(make_test_uki(command_line, b"disposable experimental kernel"))
+    staged = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "installer.cli",
+            "--config",
+            str(rescue_config),
+            "kernel-stage-experimental",
+            "--root",
+            str(root),
+            "--image",
+            str(candidate),
+        ],
+        cwd=ROOT,
+        env=env,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    experimental = linux / "gentoo-experimental.efi"
+    experimental_entry = entries / "gentoo-experimental.conf"
+    if (
+        staged.returncode != 0
+        or experimental.read_bytes() != candidate.read_bytes()
+        or (esp / "loader/loader.conf").read_text(encoding="utf-8")
+        != "default gentoo-production\ntimeout 5\n"
+        or production.read_bytes() != known_good
+        or "efi /EFI/Linux/gentoo-experimental.efi"
+        not in experimental_entry.read_text(encoding="utf-8")
+    ):
+        raise RuntimeError(f"experimental UKI CLI staging failed or changed production: {staged.stderr.strip()}")
+    print("PASS: experimental UKI staged on the disposable VFAT ESP without changing production default")
+    repeated = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "installer.cli",
+            "--config",
+            str(rescue_config),
+            "kernel-stage-experimental",
+            "--root",
+            str(root),
+            "--image",
+            str(candidate),
+        ],
+        cwd=ROOT,
+        env=env,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    if repeated.returncode != 0 or production.read_bytes() != known_good:
+        raise RuntimeError("repeating experimental staging failed or changed production")
+    print("PASS: repeating experimental UKI staging is idempotent")
 
 
 def rehearse_readonly_rescue(

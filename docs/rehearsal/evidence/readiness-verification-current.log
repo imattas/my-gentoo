@@ -1,10 +1,10 @@
 ﻿Verification run summary
 
 $ python -m pytest -q tests/unit
-PASS: 55 tests, 6 subtests
+PASS: 57 tests, 6 subtests
 
 $ python -m unittest discover -s tests/integration -v
-PASS: 11 tests
+PASS: 13 tests
 
 $ python -m compileall -q installer tests scripts/integration/storage-stage-loop.py
 PASS

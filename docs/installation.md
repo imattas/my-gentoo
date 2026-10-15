@@ -188,6 +188,8 @@ python3 -m installer.cli kernel-rollback --root /
 ```
 
 The rollback command validates the fallback UKI and embedded root command line
-before atomically replacing the production image. Custom experimental kernel
-build and Secure Boot signing remain unfinished. The physical reboot and first
-actual unlock/boot remain operator-controlled.
+before atomically replacing the production image. A separate
+`kernel-stage-experimental` command validates and stages an externally built
+UKI under its own entry while preserving the production default. The automated
+Gentoo source-kernel build and Secure Boot signing remain unfinished. The
+physical reboot and first actual unlock/boot remain operator-controlled.

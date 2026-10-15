@@ -234,9 +234,9 @@ guarded `kernel-rollback` CLI was not invoked inside Gentoo. Evidence SHA-256:
 
 `readiness-verification-current.log` records the latest unit and integration
 test runs plus compileall, rescue-script syntax, and whitespace checks. It
-reports 55 unit tests, 6 unit subtests, and 11 integration tests passing.
+reports 57 unit tests, 6 unit subtests, and 13 integration tests passing.
 SHA-256:
-`82dd86adfaa317946fdde62fa87665479181c1fcf27dbce5f64c5caf04f96ada`.
+`8f0b9dfbb453e33c8d69ab958d6e7b4598a451d37d4d8f0231e284ef1450e817`.
 
 The two `recover-package` integration cases execute the CLI against a temporary
 state directory and a Gentoo-style unavailable-atom log. The correct confirmed
@@ -255,16 +255,21 @@ with a mismatched disk serial refused before opening a mapper. Before rescue,
 the harness ran the guarded `kernel-rollback` CLI against the mounted Btrfs
 root and VFAT ESP: it replaced a deliberately invalid production UKI from the
 validated fallback and refused a mismatched disk serial without writing. The
+`kernel-stage-experimental` CLI then staged a structurally valid synthetic UKI
+to its separate FAT32 image and menu entry while preserving the production
+image and default; repeating the same staging command was idempotent. This
+synthetic fixture validates staging only; it is not a bootable compiled Gentoo
+kernel. The
 harness cleans its temporary file, mounts, mapper, aliases, and loop device.
 WSL did not provide by-partlabel udev links, so the harness created temporary
 aliases only after direct GPT-label verification on the test loop partitions.
 It stubs the loop device's absent model/serial fields and supplies the test key
-through a temporary command wrapper. This proves real storage/rescue/rollback
-commands against disposable Linux filesystems, not rollback inside the booted
-Gentoo VM, a reboot after that invocation, booted recovery media, an independent
-backup, a full installation rehearsal, or physical hardware.
+through a temporary command wrapper. This proves real storage/rescue/rollback/
+staging commands against disposable Linux filesystems, not rollback inside the
+booted Gentoo VM, a reboot after that invocation, source-built experimental
+kernel boot, booted recovery media, an independent backup, or physical hardware.
 Reproduce it with:
 `wsl.exe -d Ubuntu-22.04 -u root -- bash -lc 'cd
 /mnt/c/Users/ian/Downloads/genroo && PYTHONPATH=. python3
 scripts/integration/storage-stage-loop.py'`. SHA-256:
-`491591e112eabbb5bd5c19bb58781a42b8c9af90dc06e3d93c39ce3e2d1d6ef3`.
+`de5d4d506e6105e6f1d8bfd7fe21883b1a5ff5e6ee9bf50e360f6e81ad5d91e5`.

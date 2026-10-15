@@ -99,7 +99,7 @@ def validate_boot_assets(root: Path) -> list[str]:
         image
         for image in linux_dir.glob("*.efi")
         if image not in (production, linux_dir / "gentoo-fallback.efi")
-        and not image.name.startswith("gentoo-experimental-")
+        and not image.name.startswith("gentoo-experimental")
         and _is_unified_kernel_image(image)
         and _uki_has_command_line(image, expected_cmdline)
     ]
@@ -159,6 +159,71 @@ def rollback_production_uki(root: Path) -> str:
     return production.name
 
 
+def stage_experimental_uki(
+    root: Path, candidate: Path, entry_name: str = "gentoo-experimental"
+) -> str:
+    """Install a validated experimental UKI under its own non-default boot entry."""
+    if not isinstance(entry_name, str) or not re.fullmatch(
+        r"gentoo-experimental(?:-[a-z0-9][a-z0-9_-]{0,47})?", entry_name
+    ):
+        raise ValueError("experimental boot entry name must use the gentoo-experimental prefix")
+    efi = root / "efi"
+    linux_dir = efi / "EFI" / "Linux"
+    bootloader = efi / "EFI" / "systemd" / "systemd-bootx64.efi"
+    production = linux_dir / "gentoo-production.efi"
+    loader_dir = efi / "loader"
+    entries_dir = loader_dir / "entries"
+    loader_conf = loader_dir / "loader.conf"
+    production_entry = entries_dir / "gentoo-production.conf"
+    if candidate.is_symlink() or not candidate.is_file():
+        raise RuntimeError("experimental UKI candidate must be a regular non-symlink file")
+    candidate = candidate.resolve(strict=True)
+    try:
+        expected_cmdline = (root / "etc" / "kernel" / "cmdline").read_text(
+            encoding="utf-8"
+        ).split()
+    except OSError as exc:
+        raise RuntimeError("configured kernel command line is missing") from exc
+    if bootloader.is_symlink() or not _is_efi_application(bootloader):
+        raise RuntimeError("systemd-boot EFI application is missing or invalid")
+    if (
+        production.is_symlink()
+        or not _is_unified_kernel_image(production)
+        or not _uki_has_command_line(production, expected_cmdline)
+    ):
+        raise RuntimeError("valid production UKI is required before staging an experimental kernel")
+    if (
+        not _is_unified_kernel_image(candidate)
+        or not _uki_has_command_line(candidate, expected_cmdline)
+    ):
+        raise RuntimeError("experimental UKI candidate is invalid or has a stale root command line")
+    for path in (loader_dir, entries_dir):
+        if path.is_symlink() or not path.is_dir():
+            raise RuntimeError(f"refusing unsafe systemd-boot directory: {path}")
+    for path in (loader_conf, production_entry):
+        if path.is_symlink() or not path.is_file():
+            raise RuntimeError(f"required production boot configuration is missing or unsafe: {path}")
+    if "default gentoo-production" not in loader_conf.read_text(encoding="utf-8").splitlines():
+        raise RuntimeError("experimental staging requires the production entry to remain the default")
+    if production_entry.read_text(encoding="utf-8").splitlines()[-1:] != [
+        "efi /EFI/Linux/gentoo-production.efi"
+    ]:
+        raise RuntimeError("production boot entry does not point to the production UKI")
+
+    experimental = linux_dir / f"{entry_name}.efi"
+    entry = entries_dir / f"{entry_name}.conf"
+    for path in (experimental, entry):
+        if path.is_symlink() or (path.exists() and not path.is_file()):
+            raise RuntimeError(f"refusing unsafe experimental boot asset: {path}")
+    _atomic_copy(candidate, experimental)
+    _atomic_write_text(
+        entry,
+        "title Gentoo Workstation (experimental kernel)\n"
+        f"efi /EFI/Linux/{entry_name}.efi\n",
+    )
+    return experimental.name
+
+
 def _atomic_copy(source: Path, destination: Path) -> None:
     import shutil
 
@@ -215,6 +280,21 @@ def _write_systemd_boot_entries(efi: Path, has_fallback: bool) -> None:
             os.replace(temporary, destination)
         finally:
             temporary.unlink(missing_ok=True)
+
+
+def _atomic_write_text(destination: Path, contents: str) -> None:
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=destination.name + ".", suffix=".new", dir=destination.parent
+    )
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as stream:
+            stream.write(contents)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary, destination)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def recover_failed_package_checkpoint(

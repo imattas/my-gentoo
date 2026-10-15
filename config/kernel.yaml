@@ -11,5 +11,5 @@
   "crypt_kernel_argument": "rd.luks.name={luks_uuid}=gentoo-root",
   "root_kernel_argument": "root=/dev/mapper/gentoo-root rootflags=subvol=@ rw",
   "secure_boot": "deferred-until-signing-and-recovery-verified",
-  "experimental_entry": "must-not-replace-production-uki"
+  "experimental_entry": "gentoo-experimental"
 }

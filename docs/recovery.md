@@ -59,6 +59,28 @@ implemented yet. The generated entries use systemd-boot's documented `efi`
 entry directive and loader timeout format
 ([upstream boot manager documentation](https://systemd.io/BOOT/)).
 
+## Stage an experimental UKI
+
+Build the experimental kernel and UKI separately; the automated Gentoo source
+kernel build is not implemented yet. Once that workflow produces a UKI with
+the configured encrypted-root command line, stage it from the repository
+checkout while the target root and ESP are mounted:
+
+```bash
+python3 -m installer.cli --config config/workstation.yaml \
+  kernel-stage-experimental --root / \
+  --image /var/tmp/gentoo-experimental-candidate.efi
+```
+
+The command verifies the mounted `@` Btrfs root, VFAT `GENTOO-ESP`, configured
+system-disk serial, EFI/UKI structure, and embedded root command line. It writes
+`/efi/EFI/Linux/gentoo-experimental.efi` and a separate
+`gentoo-experimental.conf` menu entry. The existing production and fallback
+images, entries, and production default are preserved. Experimental images are
+excluded from automatic production promotion. The candidate must be built by
+an independently reviewed process until source compilation and its recovery
+flow are implemented and tested.
+
 ## Restic backup and restore check
 
 Install the `security_backup` package set, connect an independent backup

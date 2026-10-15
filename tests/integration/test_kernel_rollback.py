@@ -62,6 +62,8 @@ class KernelRollbackIntegrationTests(unittest.TestCase):
         expected_esp: str = "/dev/loop7p1",
         disk_serial: str = "GQ-BOOT-261015",
         root_source: str = "/dev/mapper/gentoo-root[/@] btrfs",
+        command: str = "kernel-rollback",
+        image: Path | None = None,
     ) -> int:
         def fake_run(argv, **_kwargs):
             if argv[0] == "findmnt":
@@ -81,16 +83,86 @@ class KernelRollbackIntegrationTests(unittest.TestCase):
 
         workstation = {"storage": {"system_target": {"serial": "GQ-BOOT-261015"}}}
 
+        def fake_load_config(path):
+            if Path(path).name == "kernel.yaml":
+                return {"experimental_entry": "gentoo-experimental"}
+            return workstation
+
         with (
             patch("installer.cli.platform.system", return_value="Linux"),
             patch("installer.cli.os.path.ismount", return_value=efi_mounted),
             patch("installer.cli.os.geteuid", return_value=0, create=True),
-            patch("installer.cli.load_config", return_value=workstation),
+            patch("installer.cli.load_config", side_effect=fake_load_config),
             patch("installer.cli.subprocess.run", side_effect=fake_run),
             redirect_stdout(io.StringIO()),
             redirect_stderr(io.StringIO()),
         ):
-            return main(["kernel-rollback", "--root", str(root)])
+            args = [command, "--root", str(root)]
+            if image is not None:
+                args.extend(["--image", str(image)])
+            return main(args)
+
+    def _experimental_target(self, directory: Path) -> tuple[Path, Path, bytes]:
+        root, linux = self._root(directory)
+        production = make_uki(b"production")
+        (linux / "gentoo-production.efi").write_bytes(production)
+        loader = root / "efi/loader"
+        entries = loader / "entries"
+        entries.mkdir(parents=True)
+        (loader / "loader.conf").write_text("default gentoo-production\ntimeout 5\n")
+        (entries / "gentoo-production.conf").write_text(
+            "title Gentoo Workstation (production)\n"
+            "efi /EFI/Linux/gentoo-production.efi\n"
+        )
+        candidate = directory / "experimental-candidate.efi"
+        candidate.write_bytes(make_uki(b"experimental"))
+        return root, candidate, production
+
+    def test_cli_stages_experimental_uki_without_changing_production_or_default(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            root, candidate, production_before = self._experimental_target(directory)
+
+            result = self._run_rollback(
+                root,
+                command="kernel-stage-experimental",
+                image=candidate,
+            )
+
+            efi = root / "efi"
+            self.assertEqual(result, 0)
+            self.assertEqual(
+                (efi / "EFI/Linux/gentoo-production.efi").read_bytes(), production_before
+            )
+            self.assertEqual(
+                (efi / "EFI/Linux/gentoo-experimental.efi").read_bytes(), candidate.read_bytes()
+            )
+            self.assertEqual(
+                (efi / "loader/loader.conf").read_text(),
+                "default gentoo-production\ntimeout 5\n",
+            )
+            self.assertIn(
+                "efi /EFI/Linux/gentoo-experimental.efi",
+                (efi / "loader/entries/gentoo-experimental.conf").read_text(),
+            )
+
+    def test_cli_refuses_experimental_staging_for_wrong_disk_serial(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            root, candidate, production_before = self._experimental_target(directory)
+
+            result = self._run_rollback(
+                root,
+                disk_serial="UNAUTHORIZED-DISK",
+                command="kernel-stage-experimental",
+                image=candidate,
+            )
+
+            self.assertEqual(result, 2)
+            self.assertFalse((root / "efi/EFI/Linux/gentoo-experimental.efi").exists())
+            self.assertEqual(
+                (root / "efi/EFI/Linux/gentoo-production.efi").read_bytes(), production_before
+            )
 
     def test_cli_restores_previous_uki_after_simulated_failed_update(self):
         with tempfile.TemporaryDirectory() as temporary:

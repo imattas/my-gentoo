@@ -1,17 +1,17 @@
-Running: sgdisk --zap-all /dev/disk/by-id/gentoo-storage-test-fbaae34a3b47
+Running: sgdisk --zap-all /dev/disk/by-id/gentoo-storage-test-b8de24912159
 Creating new GPT entries in memory.
 GPT data structures destroyed! You may now partition the disk using fdisk or
 other utilities.
-Running: partprobe /dev/disk/by-id/gentoo-storage-test-fbaae34a3b47
+Running: partprobe /dev/disk/by-id/gentoo-storage-test-b8de24912159
 Running: udevadm settle
-Running: sgdisk --new=1:0:+2G --typecode=1:EF00 --change-name=1:GENTOO-ESP --new=2:0:0 --typecode=2:8309 --change-name=2:GENTOO-CRYPTROOT /dev/disk/by-id/gentoo-storage-test-fbaae34a3b47
+Running: sgdisk --new=1:0:+2G --typecode=1:EF00 --change-name=1:GENTOO-ESP --new=2:0:0 --typecode=2:8309 --change-name=2:GENTOO-CRYPTROOT /dev/disk/by-id/gentoo-storage-test-b8de24912159
 Creating new GPT entries in memory.
 Setting name!
 partNum is 0
 Setting name!
 partNum is 1
 The operation has completed successfully.
-Running: partprobe /dev/disk/by-id/gentoo-storage-test-fbaae34a3b47
+Running: partprobe /dev/disk/by-id/gentoo-storage-test-b8de24912159
 Running: udevadm settle
 Running: cryptsetup luksFormat --type luks2 /dev/disk/by-partlabel/GENTOO-CRYPTROOT
 Running: udevadm settle
@@ -28,7 +28,7 @@ NOTE: several default settings have changed in version 5.15, please make sure
       - enabled free-space-tree (-R free-space-tree)
 
 Label:              gentoo-root
-UUID:               5ae8fd13-3bca-40e4-b9c4-7bbce06b5c44
+UUID:               c2ddfbf5-8af7-4181-95c1-0f45465e8896
 Node size:          16384
 Sector size:        4096
 Filesystem size:    5.98GiB
@@ -74,8 +74,10 @@ PASS: /mnt/gentoo/home mounted from @home
 PASS: /mnt/gentoo/.snapshots mounted from @snapshots
 PASS: /mnt/gentoo/var/log mounted from @log
 PASS: /mnt/gentoo/efi mounted from GENTOO-ESP
-PASS: checkpoint state and event log persisted in /tmp/gentoo-storage-loop-h0udacyo/state
+PASS: checkpoint state and event log persisted in /tmp/gentoo-storage-loop-am2xiqzu/state
 PASS: guarded kernel-rollback CLI replaced the invalid UKI on the disposable VFAT ESP
 PASS: guarded kernel-rollback CLI refused a mismatched disk serial without writing
+PASS: experimental UKI staged on the disposable VFAT ESP without changing production default
+PASS: repeating experimental UKI staging is idempotent
 PASS: rescue script unlocked the disposable root read-only and retrieved its fixture
 PASS: rescue script refused a mismatched disk identity without opening a mapping

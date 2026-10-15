@@ -36,6 +36,54 @@ def load_config(path: Path = CONFIG_PATH) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _validate_mounted_kernel_target(root: Path, config: dict) -> None:
+    if not os.path.ismount(root / "efi"):
+        raise RuntimeError("target EFI filesystem must be mounted at <root>/efi")
+    root_mount = subprocess.run(
+        [
+            "findmnt", "--evaluate", "--mountpoint", str(root), "--noheadings",
+            "--output", "SOURCE,FSTYPE",
+        ],
+        check=True, capture_output=True, text=True,
+    ).stdout.strip().split()
+    if root_mount != ["/dev/mapper/gentoo-root[/@]", "btrfs"]:
+        raise RuntimeError("target root must be Btrfs subvolume @ on gentoo-root")
+    mounted = subprocess.run(
+        [
+            "findmnt", "--evaluate", "--mountpoint", str(root / "efi"), "--noheadings",
+            "--output", "SOURCE,FSTYPE",
+        ],
+        check=True, capture_output=True, text=True,
+    ).stdout.strip().split()
+    if len(mounted) != 2 or mounted[1] != "vfat":
+        raise RuntimeError("target ESP mount must be a single VFAT filesystem")
+    expected_esp = subprocess.run(
+        ["readlink", "-f", "/dev/disk/by-partlabel/GENTOO-ESP"],
+        check=True, capture_output=True, text=True,
+    ).stdout.strip()
+    mounted_esp = subprocess.run(
+        ["readlink", "-f", mounted[0]], check=True, capture_output=True, text=True
+    ).stdout.strip()
+    if not expected_esp or mounted_esp != expected_esp:
+        raise RuntimeError("mounted EFI filesystem is not the GENTOO-ESP partition")
+    configured_serial = config["storage"]["system_target"].get("serial")
+    if not isinstance(configured_serial, str) or not configured_serial.strip():
+        raise RuntimeError("configured exact system-disk serial is missing")
+    expected_serial = configured_serial.strip().casefold()
+    parent = subprocess.run(
+        ["lsblk", "--noheadings", "--output", "PKNAME", mounted[0]],
+        check=True, capture_output=True, text=True,
+    ).stdout.strip()
+    if not parent:
+        raise RuntimeError("cannot identify the physical disk containing GENTOO-ESP")
+    actual_serial = subprocess.run(
+        ["lsblk", "--nodeps", "--noheadings", "--output", "SERIAL", f"/dev/{parent}"],
+        check=True, capture_output=True, text=True,
+    ).stdout.strip().casefold()
+    if not expected_serial or actual_serial != expected_serial:
+        raise RuntimeError("GENTOO-ESP is not on the configured exact system disk")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="gentoo-installer")
     parser.add_argument(
@@ -139,68 +187,46 @@ def main(argv: list[str] | None = None) -> int:
         "--root", required=True, type=Path,
         help="mounted Gentoo root (use / for the running installation or its rescue mount)",
     )
+    experimental_parser = commands.add_parser(
+        "kernel-stage-experimental",
+        help="stage a validated experimental UKI without changing the production default",
+    )
+    experimental_parser.add_argument("--root", required=True, type=Path)
+    experimental_parser.add_argument(
+        "--image", required=True, type=Path,
+        help="externally built UKI carrying the configured encrypted-root command line",
+    )
     args = parser.parse_args(argv)
 
-    if args.command == "kernel-rollback":
+    if args.command in {"kernel-rollback", "kernel-stage-experimental"}:
         try:
-            from installer.provisioning.packages import rollback_production_uki
+            from installer.provisioning.packages import (
+                rollback_production_uki,
+                stage_experimental_uki,
+            )
 
             if hasattr(os, "geteuid") and os.geteuid() != 0:
-                raise RuntimeError("kernel rollback requires root to update the mounted EFI partition")
+                raise RuntimeError("kernel management requires root to update the mounted EFI partition")
             if platform.system() != "Linux":
-                raise RuntimeError("kernel rollback can run only from Gentoo Linux or its recovery environment")
+                raise RuntimeError("kernel management can run only from Gentoo Linux or its recovery environment")
             root = args.root.resolve(strict=True)
-            if not os.path.ismount(root / "efi"):
-                raise RuntimeError("target EFI filesystem must be mounted at <root>/efi")
-            root_mount = subprocess.run(
-                [
-                    "findmnt", "--evaluate", "--mountpoint", str(root), "--noheadings",
-                    "--output", "SOURCE,FSTYPE",
-                ],
-                check=True, capture_output=True, text=True,
-            ).stdout.strip().split()
-            if root_mount != ["/dev/mapper/gentoo-root[/@]", "btrfs"]:
-                raise RuntimeError("target root must be Btrfs subvolume @ on gentoo-root")
-            mounted = subprocess.run(
-                [
-                    "findmnt", "--evaluate", "--mountpoint", str(root / "efi"), "--noheadings",
-                    "--output", "SOURCE,FSTYPE",
-                ],
-                check=True, capture_output=True, text=True,
-            ).stdout.strip().split()
-            if len(mounted) != 2 or mounted[1] != "vfat":
-                raise RuntimeError("target ESP mount must be a single VFAT filesystem")
-            expected_esp = subprocess.run(
-                ["readlink", "-f", "/dev/disk/by-partlabel/GENTOO-ESP"],
-                check=True, capture_output=True, text=True,
-            ).stdout.strip()
-            mounted_esp = subprocess.run(
-                ["readlink", "-f", mounted[0]], check=True, capture_output=True, text=True
-            ).stdout.strip()
-            if not expected_esp or mounted_esp != expected_esp:
-                raise RuntimeError("mounted EFI filesystem is not the GENTOO-ESP partition")
             config = load_config(args.config)
-            configured_serial = config["storage"]["system_target"].get("serial")
-            if not isinstance(configured_serial, str) or not configured_serial.strip():
-                raise RuntimeError("configured exact system-disk serial is missing")
-            expected_serial = configured_serial.strip().casefold()
-            parent = subprocess.run(
-                ["lsblk", "--noheadings", "--output", "PKNAME", mounted[0]],
-                check=True, capture_output=True, text=True,
-            ).stdout.strip()
-            if not parent:
-                raise RuntimeError("cannot identify the physical disk containing GENTOO-ESP")
-            actual_serial = subprocess.run(
-                ["lsblk", "--nodeps", "--noheadings", "--output", "SERIAL", f"/dev/{parent}"],
-                check=True, capture_output=True, text=True,
-            ).stdout.strip().casefold()
-            if not expected_serial or actual_serial != expected_serial:
-                raise RuntimeError("GENTOO-ESP is not on the configured exact system disk")
-            result = rollback_production_uki(root)
+            _validate_mounted_kernel_target(root, config)
+            if args.command == "kernel-rollback":
+                result = rollback_production_uki(root)
+                status = "rolled-back"
+                result_key = "production_uki"
+            else:
+                kernel_config = load_config(ROOT / "config" / "kernel.yaml")
+                result = stage_experimental_uki(
+                    root, args.image, kernel_config["experimental_entry"]
+                )
+                status = "staged"
+                result_key = "experimental_uki"
         except (OSError, RuntimeError, subprocess.SubprocessError, KeyError, ValueError) as exc:
-            print(f"kernel rollback refused: {exc}", file=sys.stderr)
+            print(f"{args.command} refused: {exc}", file=sys.stderr)
             return 2
-        print(json.dumps({"status": "rolled-back", "production_uki": result}))
+        print(json.dumps({"status": status, result_key: result}))
         return 0
 
     if args.command == "inspect":
