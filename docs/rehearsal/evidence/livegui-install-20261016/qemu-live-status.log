@@ -16,5 +16,5 @@ sd0: rd_bytes=0 wr_bytes=0 rd_operations=0 wr_operations=0 flush_operations=0 wr
 Tasks:   1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
 %Cpu(s):  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
 MiB Mem :  31885.6 total,    401.1 free,  17519.1 used,  13965.5 buff/cache
-MiB Swap:   8192.0 total,   7919.3 free,    272.7 used.  13992.6 avail Mem 
+MiB Swap:   8192.0 total,   7919.3 free,    272.7 used.  13992.6 avail Mem
 Warning: Permanently added '[127.0.0.1]:2223' (ED25519) to the list of known hosts.
