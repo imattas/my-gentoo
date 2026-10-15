@@ -1,6 +1,6 @@
 # Gentoo QEMU installation rehearsal
 
-Run date: 2026-10-14 to 2026-10-15. Status: **in progress; not a production readiness pass**.
+Run date: 2026-10-14 to 2026-10-15. Status: **encrypted boot/login rehearsal passed; project is not production-ready**.
 
 ## Isolation and reproducibility
 
@@ -65,12 +65,13 @@ command accepts only the recorded failure with matching hashes.
 graphical default, NetworkManager and SDDM links, and `rehearsal` wheel account.
 `visudo --check`, `getent`, `groups`, and `passwd -S` succeeded in the chroot.
 
-The LUKS test passphrase was not saved in the repository or rehearsal logs and
-is unavailable in the current session. Thus systemd-boot reboot, encrypted
-unlock, and interactive login remain unverified. Enter the original test key
-at the disposable VM console if it is known; otherwise recreate the disposable
-target with an operator-known test key and repeat the rehearsal. Run state and
-logs remain in `/var/lib/gentoo-installer-run9` in the builder.
+The LUKS test passphrase was not saved in the repository or rehearsal logs.
+After enabling `cryptsetup` for `sys-apps/systemd` and rebuilding it from
+source, a fresh disposable qcow2 target booted through OVMF, unlocked LUKS2,
+mounted the configured Btrfs subvolumes, reached systemd `running`, and
+accepted a console login as `rehearsal`. Sanitized serial and verification
+logs are in [`evidence/README.md`](evidence/README.md). The test passphrase
+and login password are excluded from the repository.
 
 Gaming, development, virtualization, and `security_backup` package sets are
 complete. The development set compiled LLDB and bpftrace from source. The
@@ -91,14 +92,11 @@ Ubuntu builder disk. Logs and hashes are recorded in
 [`evidence/README.md`](evidence/README.md); this is not an independent
 physical-media or full-system recovery-media restore rehearsal.
 
-## Not yet proven
+## Remaining unverified functionality
 
-This rehearsal completed all configured package sets and installer UKI
-validation, plus a diskless QEMU/KVM launch and partial Restic backup/restore,
-but has not rebooted from systemd-boot, unlocked LUKS from the initramfs,
-mounted Btrfs during target boot, reached systemd, or interactively logged in
-as the configured user. KDE Wayland, real networking, audio, AMDGPU/RADV,
-32-bit Vulkan, Steam/Proton, libvirt-managed guests, container workloads,
-kernel rollback, full system restore, and several failure-injection scenarios
-remain unverified. Do not treat this report as
+The disposable UEFI encrypted-boot and configured-user console-login gate has
+passed. KDE Wayland, real networking, audio, AMDGPU/RADV, 32-bit Vulkan,
+Steam/Proton, libvirt-managed guests, container workloads, recovery from a
+failed kernel update, full system restore from recovery media, and several
+failure-injection scenarios remain unverified. Do not treat this report as
 authorization to install on a physical drive.

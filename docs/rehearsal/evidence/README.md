@@ -124,3 +124,27 @@ tar -tzf docs/rehearsal/evidence/package-build-logs.tar.gz
 tar -xOzf docs/rehearsal/evidence/package-build-logs.tar.gz logs/packages-development-command-0-attempt-02.log | tail -30
 tar -xOzf docs/rehearsal/evidence/package-build-logs.tar.gz logs/packages-virtualization-command-0-attempt-03.log | tail -30
 ```
+
+## Encrypted UEFI boot and first login
+
+`gentoo-uki-initramfs-first-attempt.log` records the initial boot failure: the
+systemd initramfs lacked `systemd-cryptsetup` because the generated
+`sys-apps/systemd` USE flags omitted `cryptsetup`. The package configuration
+was corrected and Gentoo rebuilt systemd from source. The successful retry is
+captured in `gentoo-encrypted-boot-login.log`; the sanitized log shows the
+firmware loading the fallback EFI loader, the production UKI starting, the
+LUKS prompt and unlock, normal systemd targets, and a console login as
+`rehearsal`. `gentoo-first-boot-verification.log` records `systemctl
+is-system-running` returning `running`, the logged-in user and `wheel` group,
+and `findmnt` output for Btrfs `/`, `/home`, `/.snapshots`, `/var/log`, and
+the VFAT ESP. The guest used only disposable qcow2 disk serial
+`GQ-BOOT-261015`; no physical disk was attached. The disposable test key and
+login password are not present in these evidence files. SHA-256 hashes:
+
+- `gentoo-encrypted-boot-login.log`: `862e5a23a9e3a13fff1c9e619e0d4d8c5de091f17e70e079274206643600eddd`
+- `gentoo-first-boot-verification.log`: `8a0cb73b703c7e64e5ff9083ba3772cc6582f36ea9536330cdbf55605f6672fa`
+- `gentoo-uki-initramfs-first-attempt.log`: `b520f879ba3259c3db277b09c229014d8a18f7951caf5b1efb6c3c2506f4eebd`
+
+Reproduce the project-side UKI validation with the repository's boot asset
+validator against the rehearsal ESP mount. The successful VM output above is
+runtime evidence; package-install and UKI section inspection alone are not.

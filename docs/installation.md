@@ -157,6 +157,11 @@ sets `net-libs/gnutls` `pkcs11` and `tools` only for the virt-manager
 dependency. Do not add the blocking `sys-firmware/edk2` source atom alongside
 that binpkg.
 
+Encrypted-root boot also needs `cryptsetup` enabled for `sys-apps/systemd`.
+The disposable UEFI rehearsal caught that without this USE flag, the systemd
+initramfs omitted `systemd-cryptsetup` and waited forever for the root mapper.
+The generated package.use configuration now enables the flag.
+
 Create the interactive login after the desktop stage. The password is entered
 through `passwd`'s terminal prompt; it is never passed in command arguments or
 written to installer state:

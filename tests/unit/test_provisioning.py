@@ -146,6 +146,10 @@ Available profile symlink targets:
             "sys-kernel/installkernel systemd dracut systemd-boot ukify uki",
             files["etc/portage/package.use/gentoo-workstation"],
         )
+        self.assertIn(
+            "sys-apps/systemd boot ukify cryptsetup",
+            files["etc/portage/package.use/gentoo-workstation"],
+        )
         self.assertIn("rd.luks.name=12345678-1234-1234-1234-123456789abe=gentoo-root", files["etc/kernel/cmdline"])
         self.assertIn("/home", files["etc/fstab"])
         self.assertNotIn("password", "\n".join(files.values()).lower())

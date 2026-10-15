@@ -6,7 +6,7 @@
   "package_use": [
     ["sys-libs/ncurses", "-gpm"],
     ["dev-python/pillow", "-truetype"],
-    ["sys-apps/systemd", "boot", "ukify"],
+    ["sys-apps/systemd", "boot", "ukify", "cryptsetup"],
     ["sys-kernel/installkernel", "systemd", "dracut", "systemd-boot", "ukify", "uki"],
     ["x11-libs/libdrm", "video_cards_radeon"],
     ["net-libs/gnutls", "pkcs11", "tools"]

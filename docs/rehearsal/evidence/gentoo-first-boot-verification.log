@@ -1,0 +1,19 @@
+UTC 2026-10-15T07:48:58.717701+00:00
+QEMU guest disk serial: GQ-BOOT-261015
+
+[?2004l]3008;end=ac2b5ace-5599-4b0b-803b-889609a370f7;exit=success\]3008;start=a04903a3-5902-47b7-9607-1701fdbb41ad;machineid=b9e356061f78ffd6207d6a6f6ad01cea;user=rehearsal;hostname=gentoo-workstation;bootid=3a024565-cd9e-45cb-9b55-7414ac97b94c;pid=00000000000000000782;type=shell;cwd=/home/rehearsal\[?2004hrehearsal@gentoo-workstation ~ $ printf 'TEST_LOGIN_USER='; id -un; printf 'TEST_LOGIN_GROUPS='; id -Gn; printf 'TEST_SYSTEMD='; systemctl is-system-running; printf 'TEST_MOUNTS\n'; for m in / /home /.snapshots /var/log /efi; do printf 'MOUNT='; printf '%s ' "$m"; findmnt -n --target "$m" -o TARGET,FSTYPE,SOURCE; opts=$(findmnt -n --target "$m" -o OPTIONS); printf '%s\n' "$opts" | tr ',' '\n' | grep '^subvol=' || true; done; printf '\n__GENTOO_MOUNTS_DONE__\n'
+[?2004l]3008;start=9ca38e3b-48d1-4ad2-b547-861b3c3d8f5e;machineid=b9e356061f78ffd6207d6a6f6ad01cea;user=rehearsal;hostname=gentoo-workstation;bootid=3a024565-cd9e-45cb-9b55-7414ac97b94c;pid=00000000000000000782;type=command;cwd=/home/rehearsal\TEST_LOGIN_USER=rehearsal
+TEST_LOGIN_GROUPS=rehearsal wheel
+TEST_SYSTEMD=running
+TEST_MOUNTS
+MOUNT=/ / btrfs /dev/mapper/gentoo-root[/@]
+subvol=/@
+MOUNT=/home /home btrfs /dev/mapper/gentoo-root[/@home]
+subvol=/@home
+MOUNT=/.snapshots /.snapshots btrfs /dev/mapper/gentoo-root[/@snapshots]
+subvol=/@snapshots
+MOUNT=/var/log /var/log btrfs /dev/mapper/gentoo-root[/@log]
+subvol=/@log
+MOUNT=/efi /efi vfat /dev/vda1
+
+__GENTOO_MOUNTS_DONE__

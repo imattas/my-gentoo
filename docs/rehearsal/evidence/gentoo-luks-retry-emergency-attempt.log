@@ -1,0 +1,46 @@
+UTC 2026-10-15T07:42:04.087012+00:00
+QEMU guest disk serial: GQ-BOOT-261015
+                        (no echo) 
+[   [0;31m*[0;1;31m*[0m[0;31m*[0m] (1 of 3) A start job is running for…/gentoo-root (2min 33s / no limit)
+M[K[  [0;31m*[0;1;31m*[0m[0;31m* [0m] (1 of 3) A start job is running for…/gentoo-root (2min 34s / no limit)
+M[K[ [0;31m*[0;1;31m*[0m[0;31m*  [0m] (2 of 3) A start job is running for… gentoo-root (2min 34s / no limit)
+[0;1;39mPlease enter passphrase for disk GENTOO-CRYPTROOT (gentoo-root):	[REDACTED DISPOSABLE KEY]
+ (press TAB for no echo) [0m                        (no echo) 
+M[K[[0;1;31m*[0m[0;31m*    [0m] (2 of 3) A start job is running for… gentoo-root (2min 35s / no limit)
+M[K[[0m[0;31m*     [0m] (3 of 3) A start job is running for…itqueue hook (2min 36s / no limit)
+M[K[[0;1;31m*[0m[0;31m*    [0m] (3 of 3) A start job is running for…itqueue hook (2min 36s / no limit)
+M[K[[0;1;31mFAILED[0m] Failed to start [0;1;39mCryptography Setup for gentoo-root[0m.
+[KSee 'systemctl status "systemd-cryptset…@gentoo\\x2droot.service"' for details.
+[[0;1;38:5:185mDEPEND[0m] Dependency failed for [0;1;39mLocal Encrypted Volumes[0m.
+[[0;1;38:5:185mDEPEND[0m] Dependency failed for [0;1;39m/dev/mapper/gentoo-root[0m.
+[[0;1;38:5:185mDEPEND[0m] Dependency failed for [0;1;39m/sysroot[0m.
+[[0;1;38:5:185mDEPEND[0m] Dependency failed for [0;1;39mInitrd Root File System[0m.
+[[0;1;38:5:185mDEPEND[0m] Dependency failed for [0;1;39mMountpoints Configured in the Real Root[0m.
+[[0;1;38:5:185mDEPEND[0m] Dependency failed for [0;1;39mInitrd Root Device[0m.
+[[0;1;38:5:185mDEPEND[0m] Dependency failed for [0;1;39mFile System Check on /dev/mapper/gentoo-root[0m.
+[[0;32m  OK  [0m] Reached target [0;1;39mInitrd File Systems[0m.
+         Stopping [0;1;39mDispatch Password Requests to Console[0m...
+[[0;32m  OK  [0m] Stopped [0;1;39mdracut initqueue hook[0m.
+[[0;32m  OK  [0m] Stopped [0;1;39mDispatch Password Requests to Console[0m.
+[[0;32m  OK  [0m] Stopped [0;1;39mDispatch Password Requests to Console Directory Watch[0m.
+[[0;32m  OK  [0m] Reached target [0;1;39mPreparation for Remote File Systems[0m.
+[[0;32m  OK  [0m] Reached target [0;1;39mRemote Encrypted Volumes[0m.
+[[0;32m  OK  [0m] Reached target [0;1;39mRemote File Systems[0m.
+[[0;32m  OK  [0m] Stopped [0;1;39mdracut pre-trigger hook[0m.
+[[0;32m  OK  [0m] Stopped [0;1;39mdracut pre-udev hook[0m.
+[[0;32m  OK  [0m] Stopped [0;1;39mdracut cmdline hook[0m.
+[[0;32m  OK  [0m] Started [0;1;39mEmergency Shell[0m.
+[[0;32m  OK  [0m] Reached target [0;1;39mEmergency Mode[0m.
+Warning: /dev/mapper/gentoo-root does not exist
+
+Generating "/run/initramfs/rdsosreport.txt"
+
+
+Entering emergency mode. Exit the shell to continue.
+Type "journalctl" to view system logs.
+You might want to save "/run/initramfs/rdsosreport.txt" to a USB stick or /boot
+after mounting them and attach it to a bug report.
+
+
+Press Enter for system maintenance
+(or press Control-D to continue): 
