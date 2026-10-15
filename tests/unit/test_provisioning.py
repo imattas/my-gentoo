@@ -128,6 +128,14 @@ Available profile symlink targets:
         self.assertIn("sync-type = rsync", files["etc/portage/repos.conf/gentoo.conf"])
         self.assertIn("x86-64-v3", files["etc/portage/binrepos.conf/gentoobinhost.conf"])
         self.assertIn("sys-libs/ncurses -gpm", files["etc/portage/package.use/gentoo-workstation"])
+        self.assertEqual(
+            files["etc/portage/package.accept_keywords/gentoo-workstation"],
+            "sys-kernel/linux-firmware ~amd64\n",
+        )
+        self.assertEqual(
+            files["etc/portage/package.license/gentoo-workstation"],
+            "sys-kernel/linux-firmware linux-fw-redistributable\n",
+        )
         self.assertIn(
             "sys-kernel/installkernel systemd dracut systemd-boot ukify uki",
             files["etc/portage/package.use/gentoo-workstation"],

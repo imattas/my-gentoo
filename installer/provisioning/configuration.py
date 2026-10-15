@@ -122,6 +122,12 @@ def build_target_files(
             "sync-uri = rsync://rsync.gentoo.org/gentoo-portage\n"
         ),
         "etc/portage/package.use/gentoo-workstation": render_package_use(packages["package_use"]),
+        "etc/portage/package.accept_keywords/gentoo-workstation": render_package_use(
+            packages.get("package_accept_keywords", [])
+        ),
+        "etc/portage/package.license/gentoo-workstation": render_package_use(
+            packages.get("package_license", [])
+        ),
         "etc/portage/binrepos.conf/gentoobinhost.conf": (
             "[binhost]\n"
             "priority = 9999\n"

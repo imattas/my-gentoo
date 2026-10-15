@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 from pathlib import Path
 import struct
 import subprocess
@@ -91,6 +92,110 @@ def validate_boot_assets(root: Path) -> list[str]:
     ):
         raise RuntimeError("systemd-boot and a valid EFI application production UKI are required")
     return [production.name]
+
+
+def recover_failed_package_checkpoint(
+    package_set: str,
+    package_config: dict[str, Any],
+    state_dir: Path,
+    command_index: int,
+    confirmed_log_sha256: str,
+    storage_plan_sha256: str,
+    *,
+    non_interactive: bool = False,
+) -> dict[str, Any]:
+    """Reopen a package checkpoint only after a verified pre-merge resolution failure."""
+    if package_set not in PACKAGE_SETS:
+        raise ValueError(f"unknown package set: {package_set}")
+    state_dir = state_dir.resolve(strict=True)
+    state_path = state_dir / f"gentoo-packages-{package_set}.json"
+    event_path = state_dir / "gentoo-package-events.jsonl"
+    log_path = state_dir / "logs" / f"packages-{package_set}-command-{command_index}.log"
+    journal = json.loads(state_path.read_text(encoding="utf-8"))
+    storage_state = json.loads((state_dir / "gentoo-storage-state.json").read_text(encoding="utf-8"))
+    base_state = json.loads((state_dir / "gentoo-base-config-state.json").read_text(encoding="utf-8"))
+    if (
+        journal.get("package_set") != package_set
+        or journal.get("complete")
+        or journal.get("started") != command_index
+        or journal.get("completed") != list(range(command_index))
+        or journal.get("storage_plan_sha256") != storage_plan_sha256
+        or storage_state.get("plan_sha256") != storage_plan_sha256
+        or base_state.get("storage_plan_sha256") != storage_plan_sha256
+    ):
+        raise RuntimeError("package, storage, and base configuration checkpoints do not identify this failed command")
+
+    events = [
+        json.loads(line)
+        for line in event_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    matching_failure = [
+        event for event in events
+        if event.get("event") == "package-command-failed"
+        and event.get("package_set") == package_set
+        and event.get("index") == command_index
+        and Path(event.get("log", "")).resolve() == log_path.resolve()
+    ]
+    if not matching_failure or not log_path.is_file():
+        raise RuntimeError("failed package event or its command log is missing")
+
+    log_bytes = log_path.read_bytes()
+    log_sha256 = hashlib.sha256(log_bytes).hexdigest()
+    if not re.fullmatch(r"[0-9a-f]{64}", confirmed_log_sha256) or log_sha256 != confirmed_log_sha256:
+        raise RuntimeError("failed command log hash does not match the operator-reviewed hash")
+    log_text = log_bytes.decode("utf-8", errors="replace")
+    unavailable_atom = 'emerge: there are no ebuilds to satisfy "' in log_text
+    masked_atom = (
+        '!!! All ebuilds that could satisfy "' in log_text
+        and "masked packages is required to complete your request" in log_text
+    )
+    if (
+        not (unavailable_atom or masked_atom)
+        or ">>> emerge (" in log_text
+        or "Compiling/Merging (" in log_text
+        or "Merging Binary (" in log_text
+    ):
+        raise RuntimeError("failed log does not prove a pre-merge unavailable-atom resolution failure")
+
+    commands = render_emerge_commands(
+        package_config, package_set, non_interactive=non_interactive
+    )
+    for completed_index in range(command_index):
+        starts = [
+            event for event in events
+            if event.get("event") == "package-command-started"
+            and event.get("package_set") == package_set
+            and event.get("index") == completed_index
+        ]
+        if not starts or starts[-1].get("argv") != commands[completed_index]:
+            raise RuntimeError("a completed package command changed; checkpoint recovery is unsafe")
+
+    previous_digest = journal.get("command_sha256")
+    new_digest = hashlib.sha256(
+        json.dumps(commands, separators=(",", ":")).encode()
+    ).hexdigest()
+    journal["command_sha256"] = new_digest
+    journal["started"] = None
+    recovery = {
+        "failed_index": command_index,
+        "log_sha256": log_sha256,
+        "previous_command_sha256": previous_digest,
+        "new_command_sha256": new_digest,
+        "recovered_at": datetime.now(timezone.utc).isoformat(),
+    }
+    journal.setdefault("recoveries", []).append(recovery)
+    _atomic_json(state_path, journal)
+    _append_event(
+        event_path,
+        {
+            "time": recovery["recovered_at"],
+            "event": "package-checkpoint-recovered",
+            "package_set": package_set,
+            **recovery,
+        },
+    )
+    return {"status": "ready-to-resume", "package_set": package_set, **recovery}
 
 
 def _is_efi_application(path: Path) -> bool:

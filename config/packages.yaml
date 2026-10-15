@@ -9,6 +9,8 @@
     ["sys-apps/systemd", "boot", "ukify"],
     ["sys-kernel/installkernel", "systemd", "dracut", "systemd-boot", "ukify", "uki"]
   ],
+  "package_accept_keywords": [["sys-kernel/linux-firmware", "~amd64"]],
+  "package_license": [["sys-kernel/linux-firmware", "linux-fw-redistributable"]],
   "sets": {
     "base": [
       "app-admin/sudo",
@@ -18,7 +20,7 @@
       "net-misc/networkmanager",
       "sys-apps/pciutils",
       "sys-apps/usbutils",
-      "sys-firmware/linux-firmware",
+      "sys-kernel/linux-firmware",
       "sys-fs/btrfs-progs",
       "sys-fs/cryptsetup",
       "sys-kernel/dracut",

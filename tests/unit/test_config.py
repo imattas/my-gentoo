@@ -59,6 +59,12 @@ class WorkstationConfigTests(unittest.TestCase):
 
         self.assertEqual(parse_cpu_model(info), "AMD Ryzen 7 7800X3D")
 
+    def test_firmware_atom_uses_current_kernel_category(self):
+        packages = json.loads((ROOT / "config" / "packages.yaml").read_text())
+
+        self.assertIn("sys-kernel/linux-firmware", packages["sets"]["base"])
+        self.assertNotIn("sys-firmware/linux-firmware", packages["sets"]["base"])
+
 
 if __name__ == "__main__":
     unittest.main()

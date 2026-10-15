@@ -26,9 +26,12 @@ boot a disposable KVM guest, restore a sample file from an independent Restic
 repository, and boot rescue media to retrieve a file. Record evidence and
 results before describing those capabilities as working.
 
-The OVMF/QEMU disposable Ubuntu builder is running the Gentoo base world merge
-against a disposable encrypted qcow2 target. The latest recorded count is
-213/361 packages. Target UKI generation, reboot, encrypted unlock, first login,
-desktop services, and recovery scenarios remain unverified. Do not use the
-installer on a physical drive until the release gate in `readiness-report.md`
-and the live-media plan review and backup/recovery gates have been completed.
+The OVMF/QEMU disposable Ubuntu builder completed the 361 package Gentoo base
+world merge. The subsequent base utility set is being installed against the
+same disposable encrypted qcow2 target. Package resolution failures and
+checkpoint recovery evidence are in
+`rehearsal/gentoo-install-2026-10-14.md`. Target UKI generation, reboot,
+encrypted unlock, first login, desktop services, and recovery scenarios remain
+unverified. Do not use the installer on a physical drive until the release gate
+in `readiness-report.md` and the live-media plan review and backup/recovery
+gates have been completed.

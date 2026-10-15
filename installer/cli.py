@@ -11,10 +11,14 @@ import sys
 from installer.authorization.plan import create_authorization_record
 from installer.discovery.host import inspect_host
 from installer.planning.storage import plan_hash_matches, render_storage_plan, validate_storage_plan
-from installer.stages.storage import apply_storage_plan
+from installer.stages.storage import apply_storage_plan, ensure_state_location_off_target
 from installer.stages.stage3 import extract_verified_stage3, verify_root_mapping, verify_stage3
 from installer.stages.base import configure_base_system
-from installer.provisioning.packages import PACKAGE_SETS, run_package_stage
+from installer.provisioning.packages import (
+    PACKAGE_SETS,
+    recover_failed_package_checkpoint,
+    run_package_stage,
+)
 from installer.stages.user import setup_user
 from installer.stages.chroot import mounted_chroot
 
@@ -104,6 +108,16 @@ def main(argv: list[str] | None = None) -> int:
     configure_parser.add_argument("--timezone", default="America/New_York")
     configure_parser.add_argument("--locale", default="en_US.UTF-8")
     configure_parser.add_argument("--hostname", default="gentoo-workstation")
+    recover_parser = commands.add_parser(
+        "recover-package",
+        help="reopen a reviewed package checkpoint after an unavailable-atom resolution failure",
+    )
+    recover_parser.add_argument("--set", dest="package_set", required=True, choices=PACKAGE_SETS)
+    recover_parser.add_argument("--storage-plan", required=True, type=Path)
+    recover_parser.add_argument("--state-dir", required=True, type=Path)
+    recover_parser.add_argument("--command-index", required=True, type=int)
+    recover_parser.add_argument("--confirm-log-sha256", required=True)
+    recover_parser.add_argument("--non-interactive", action="store_true")
     args = parser.parse_args(argv)
 
     if args.command == "inspect":
@@ -121,7 +135,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             return 2
         return 0
-    if args.command in {"plan", "validate", "authorize", "install", "resume", "verify-stage3", "configure"}:
+    if args.command in {"plan", "validate", "authorize", "install", "resume", "verify-stage3", "configure", "recover-package"}:
         try:
             config = load_config(args.config)
             if args.command == "plan":
@@ -162,6 +176,35 @@ def main(argv: list[str] | None = None) -> int:
                         hostname=args.hostname,
                         report=report,
                     )
+                print(json.dumps(result, indent=2))
+                return 0
+
+            if args.command == "recover-package":
+                storage_plan = json.loads(args.storage_plan.read_text(encoding="utf-8"))
+                package_config = json.loads(
+                    (ROOT / "config" / "packages.yaml").read_text(encoding="utf-8")
+                )
+                expected = config["storage"]["system_target"]
+                if (
+                    not plan_hash_matches(storage_plan)
+                    or storage_plan.get("target", {}).get("serial") != expected["serial"]
+                ):
+                    raise ValueError("storage plan does not identify the configured exact target")
+                state_dir = args.state_dir.resolve(strict=True)
+                ensure_state_location_off_target(
+                    state_dir,
+                    storage_plan["target"]["by_id"],
+                    (expected["serial"], config["storage"]["data_disk"]["serial"]),
+                )
+                result = recover_failed_package_checkpoint(
+                    args.package_set,
+                    package_config,
+                    state_dir,
+                    args.command_index,
+                    args.confirm_log_sha256,
+                    storage_plan["sha256"],
+                    non_interactive=args.non_interactive,
+                )
                 print(json.dumps(result, indent=2))
                 return 0
 

@@ -1,6 +1,6 @@
 # Gentoo QEMU installation rehearsal
 
-Run date: 2026-10-14. Status: **in progress; not a production readiness pass**.
+Run date: 2026-10-14 to 2026-10-15. Status: **in progress; not a production readiness pass**.
 
 ## Isolation and reproducibility
 
@@ -32,23 +32,25 @@ The passphrase is not included in this report, state, or logs.
 - A deliberate wrong LUKS test key was rejected by
   `cryptsetup open --test-passphrase`; this read-only test did not create a
   mapping or alter the header.
-- Local unit suite: `python -m pytest -q tests/unit` — 42 passed, 4 subtests.
+- Local unit suite after current installer fixes: `python -m pytest -q tests/unit` — 47 passed, 6 subtests.
   `python -m compileall -q installer tests` and `git diff --check` passed.
 
 ## Active work and logs
 
-The base Portage world update is running on the target. It resolved 361
-packages and is being installed with bounded single-job parallelism in the
-10 GiB VM. At the latest check it had merged 213 of 361 packages. Portage's
-live log is `/mnt/gentoo/var/log/emerge.log` in the builder. The installer
-state directory is `/var/lib/gentoo-installer-run9`; after each package command
-returns, captured output is written under its `logs/` directory. The VM's
-`/var/lib` state disk and target qcow2 remain outside the repository until
-copied into this directory.
+The `@world` command completed all 361 packages. The base command initially
+failed before merging because the firmware atom had changed category, then
+failed resolution because Gentoo masks the current firmware ebuild by keyword
+and redistributable license. Those observations are preserved in
+`/var/lib/gentoo-installer-run9/logs/packages-base-command-1.log` in the builder.
+The config now uses `sys-kernel/linux-firmware`, with package specific `~amd64`
+and `linux-fw-redistributable` acceptance. A bounded recovery command verifies
+the failed log hash and exact storage/base checkpoint hashes before reopening
+a command. The resumed base package merge is currently running; its result is
+pending. Run state remains in the builder at `/var/lib/gentoo-installer-run9`.
 
 ## Not yet proven
 
-This rehearsal has not yet completed the package install, produced and
+This rehearsal has not yet completed the base package install, produced and
 validated the project's UKI, rebooted from systemd-boot, unlocked LUKS from the
 initramfs, mounted Btrfs during target boot, reached systemd, or logged in as
 the configured user. KDE, audio, AMDGPU/RADV, 32-bit Vulkan, Steam, development,
