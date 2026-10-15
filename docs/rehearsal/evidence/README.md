@@ -216,3 +216,16 @@ the storage command runner. Discovery and command execution are controlled test
 fixtures; these cases do not write a block device. The full integration suite
 reports 9 passed; unit tests report 53 passed and 6 subtests passed. SHA-256:
 `bfd0ce6c11645aa21655d1a8a542154e3825cf0a52faa7479439729a308c6d3c`.
+
+## QEMU boot after simulated failed-kernel rollback
+
+`gentoo-kernel-rollback-qemu-boot.log` records a disposable-overlay recovery
+rehearsal. The test replaced the production UKI with an invalid stub, invoked
+the project's `rollback_production_uki()` function to restore the preserved
+fallback, regenerated the production/fallback boot entries, and booted the
+result under OVMF/QEMU. The restored image reached the encrypted-root
+passphrase prompt. No test key was entered. The ESP passed `fsck.vfat -n`
+before and after the boot, QEMU exited cleanly through QMP, and the qcow2 check
+reported no errors. This is a function-level rollback and boot rehearsal; the
+guarded `kernel-rollback` CLI was not invoked inside Gentoo. Evidence SHA-256:
+`d50f4c2ed6f73ebf422f1eb6eea4925caaa1308c13aaf1f8c31d945c8bb8162d`.

@@ -1,0 +1,13 @@
+QEMU rollback boot rehearsal on a disposable qcow2 copy-on-write overlay; no physical drive attached.
+
+Procedure: copied the valid target production UKI to gentoo-fallback.efi, replaced gentoo-production.efi with an intentionally invalid stub, then called the project's rollback_production_uki() to restore production from fallback. The restored images matched SHA-256 5c3f7b92011e586eb22fa202459a2d26c79103f4ae35dd3d294c35893ff4d9a5. The project writer regenerated the explicit production/fallback entries and loader.conf default gentoo-production with timeout 5.
+
+OVMF/QEMU then booted the restored overlay. It reached the expected encrypted-root device and cryptsetup passphrase prompt. No passphrase was entered because the disposable test key had been removed. QMP reported SHUTDOWN (host-qmp-quit), QEMU exited 0. The ESP passed fsck.vfat -n before and after boot; both UKI files still had the same SHA-256 after boot. qemu-img check reported no errors.
+
+This rehearses the rollback function and boot of the restored image. It does not invoke the guarded kernel-rollback CLI inside Gentoo; its OS, mount, and disk-serial guards are covered by separate temporary-EFI CLI integration tests. It also does not repeat LUKS unlock/login.
+
+Serial excerpts:
+BdsDxe: starting Boot0002 "UEFI Misc Device" from PciRoot(0x0)/Pci(0x3,0x0)
+[    0.000000] Command line: rd.luks.name=9bd5a0a5-f204-4d79-be18-8693bf596ffe=gentoo-root root=/dev/mapper/gentoo-root rootflags=subvol=@ rw console=ttyS0,115200n8
+[  OK  ] Found device /dev/disk/by-uuid/9bd5a0a5-f204-4d79-be18-8693bf596ffe.
+Please enter passphrase for disk GENTOO-CRYPTROOT (gentoo-root): (press TAB for no echo)
