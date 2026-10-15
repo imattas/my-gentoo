@@ -1,0 +1,210 @@
+{
+  "commands_for_review_only": [
+    [
+      "sgdisk",
+      "--zap-all",
+      "/dev/disk/by-id/virtio-GQ-LIVEGUI-INSTALL-2"
+    ],
+    [
+      "partprobe",
+      "/dev/disk/by-id/virtio-GQ-LIVEGUI-INSTALL-2"
+    ],
+    [
+      "udevadm",
+      "settle"
+    ],
+    [
+      "sgdisk",
+      "--new=1:0:+2G",
+      "--typecode=1:EF00",
+      "--change-name=1:GENTOO-ESP",
+      "--new=2:0:0",
+      "--typecode=2:8309",
+      "--change-name=2:GENTOO-CRYPTROOT",
+      "/dev/disk/by-id/virtio-GQ-LIVEGUI-INSTALL-2"
+    ],
+    [
+      "partprobe",
+      "/dev/disk/by-id/virtio-GQ-LIVEGUI-INSTALL-2"
+    ],
+    [
+      "udevadm",
+      "settle"
+    ],
+    [
+      "cryptsetup",
+      "luksFormat",
+      "--type",
+      "luks2",
+      "/dev/disk/by-partlabel/GENTOO-CRYPTROOT"
+    ],
+    [
+      "udevadm",
+      "settle"
+    ],
+    [
+      "cryptsetup",
+      "open",
+      "/dev/disk/by-partlabel/GENTOO-CRYPTROOT",
+      "gentoo-root"
+    ],
+    [
+      "udevadm",
+      "settle"
+    ],
+    [
+      "mkfs.btrfs",
+      "--label",
+      "gentoo-root",
+      "/dev/mapper/gentoo-root"
+    ],
+    [
+      "udevadm",
+      "settle"
+    ],
+    [
+      "mkfs.fat",
+      "-F",
+      "32",
+      "-n",
+      "GENTOO-ESP",
+      "/dev/disk/by-partlabel/GENTOO-ESP"
+    ],
+    [
+      "udevadm",
+      "settle"
+    ],
+    [
+      "mkdir",
+      "--parents",
+      "/mnt/gentoo-top"
+    ],
+    [
+      "mount",
+      "-o",
+      "subvolid=5",
+      "/dev/mapper/gentoo-root",
+      "/mnt/gentoo-top"
+    ],
+    [
+      "btrfs",
+      "subvolume",
+      "create",
+      "/mnt/gentoo-top/@"
+    ],
+    [
+      "btrfs",
+      "subvolume",
+      "create",
+      "/mnt/gentoo-top/@home"
+    ],
+    [
+      "btrfs",
+      "subvolume",
+      "create",
+      "/mnt/gentoo-top/@snapshots"
+    ],
+    [
+      "btrfs",
+      "subvolume",
+      "create",
+      "/mnt/gentoo-top/@log"
+    ],
+    [
+      "umount",
+      "/mnt/gentoo-top"
+    ],
+    [
+      "mkdir",
+      "--parents",
+      "/mnt/gentoo"
+    ],
+    [
+      "mount",
+      "-o",
+      "compress=zstd:3,noatime,subvol=@",
+      "/dev/mapper/gentoo-root",
+      "/mnt/gentoo"
+    ],
+    [
+      "mkdir",
+      "--parents",
+      "/mnt/gentoo/home",
+      "/mnt/gentoo/.snapshots",
+      "/mnt/gentoo/var/log",
+      "/mnt/gentoo/efi"
+    ],
+    [
+      "mount",
+      "-o",
+      "compress=zstd:3,noatime,subvol=@home",
+      "/dev/mapper/gentoo-root",
+      "/mnt/gentoo/home"
+    ],
+    [
+      "mount",
+      "-o",
+      "compress=zstd:3,noatime,subvol=@snapshots",
+      "/dev/mapper/gentoo-root",
+      "/mnt/gentoo/.snapshots"
+    ],
+    [
+      "mount",
+      "-o",
+      "compress=zstd:3,noatime,subvol=@log",
+      "/dev/mapper/gentoo-root",
+      "/mnt/gentoo/var/log"
+    ],
+    [
+      "mount",
+      "-o",
+      "umask=0077,noatime",
+      "/dev/disk/by-partlabel/GENTOO-ESP",
+      "/mnt/gentoo/efi"
+    ]
+  ],
+  "effects": [
+    "existing partition data will be destroyed",
+    "all data on the named system disk will be irrecoverable without backups",
+    "the separate data disk is outside this plan"
+  ],
+  "layout": {
+    "btrfs_subvolumes": {
+      "@": "/",
+      "@home": "/home",
+      "@log": "/var/log",
+      "@snapshots": "/.snapshots"
+    },
+    "efi_mount": "/efi",
+    "efi_size_bytes": 2147483648,
+    "mount_options": [
+      "compress=zstd:3",
+      "noatime"
+    ],
+    "partition_table": "GPT",
+    "root_encryption": "LUKS2",
+    "root_filesystem": "Btrfs",
+    "root_partition": "remaining disk capacity"
+  },
+  "observed_state": {
+    "children": [],
+    "filesystem": null,
+    "model": "",
+    "mountpoints": [],
+    "partition_table": null,
+    "path": "/dev/vda",
+    "serial": "GQ-LIVEGUI-INSTALL-2",
+    "size_bytes": 107374182400
+  },
+  "plan_type": "gentoo-system-storage",
+  "read_only_plan": true,
+  "requires_explicit_authorization": true,
+  "schema_version": 1,
+  "sha256": "b98af0618558c362a74eac5a304cb1697966e57a69e34c56845117d44dfea4f4",
+  "target": {
+    "by_id": "/dev/disk/by-id/virtio-GQ-LIVEGUI-INSTALL-2",
+    "model": "",
+    "observed_device_path": "/dev/vda",
+    "serial": "GQ-LIVEGUI-INSTALL-2"
+  }
+}

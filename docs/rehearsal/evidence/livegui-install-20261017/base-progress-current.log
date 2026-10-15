@@ -1,0 +1,31 @@
+2026-10-15T22:46:36+00:00
+ 120557 Sl         09:52
+QEMU 6.2.0 monitor - type 'help' for more information
+(qemu) i[K[Din[K[D[Dinf[K[D[D[Dinfo[K[D[D[D[Dinfo [K[D[D[D[D[Dinfo s[K[D[D[D[D[D[Dinfo st[K[D[D[D[D[D[D[Dinfo sta[K[D[D[D[D[D[D[D[Dinfo stat[K[D[D[D[D[D[D[D[D[Dinfo statu[K[D[D[D[D[D[D[D[D[D[Dinfo status[K
+VM status: running
+(qemu) QEMU 6.2.0 monitor - type 'help' for more information
+(qemu) i[K[Din[K[D[Dinf[K[D[D[Dinfo[K[D[D[D[Dinfo [K[D[D[D[D[Dinfo b[K[D[D[D[D[D[Dinfo bl[K[D[D[D[D[D[D[Dinfo blo[K[D[D[D[D[D[D[D[Dinfo bloc[K[D[D[D[D[D[D[D[D[Dinfo block[K[D[D[D[D[D[D[D[D[D[Dinfo blocks[K[D[D[D[D[D[D[D[D[D[D[Dinfo blockst[K[D[D[D[D[D[D[D[D[D[D[D[Dinfo blocksta[K[D[D[D[D[D[D[D[D[D[D[D[D[Dinfo blockstat[K[D[D[D[D[D[D[D[D[D[D[D[D[D[Dinfo blockstats[K
+pflash0: rd_bytes=0 wr_bytes=0 rd_operations=0 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=0 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=0
+pflash1: rd_bytes=0 wr_bytes=0 rd_operations=0 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=0 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=0
+live: rd_bytes=564657152 wr_bytes=0 rd_operations=6795 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=813053422 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=121960771230
+target: rd_bytes=36882944 wr_bytes=3413804032 rd_operations=2940 wr_operations=50239 flush_operations=183 wr_total_time_ns=161828063646 rd_total_time_ns=109682471 flush_total_time_ns=597029217 rd_merged=53 wr_merged=11929 idle_time_ns=4891044
+state: rd_bytes=298316800 wr_bytes=4726784 rd_operations=218 wr_operations=442 flush_operations=264 wr_total_time_ns=74761982 rd_total_time_ns=299487659 flush_total_time_ns=432584703 rd_merged=36 wr_merged=0 idle_time_ns=25627666626
+ide2-cd0: rd_bytes=82 wr_bytes=0 rd_operations=4 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=5239 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=569246675389
+sd0: rd_bytes=0 wr_bytes=0 rd_operations=0 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=0 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=0
+(qemu) Warning: Permanently added '[127.0.0.1]:2223' (ED25519) to the list of known hosts.
+6682 /usr/bin/python3.14 /usr/lib/python-exec/python3.14/emerge --ask=n --verbose --update --deep --newuse --with-bdeps=y @world
+47337 /usr/bin/python3.14 /usr/lib/python-exec/python3.14/emerge --ask=n --verbose --update --deep --newuse --with-bdeps=y @world
+52146 bash -c pgrep -af emerge; sudo tail -n 4 /mnt/gentoo/var/log/emerge.log; cat /mnt/recovery/retry-20261017/gentoo-packages-base.json
+1792104378:  ::: completed emerge (26 of 363) virtual/ttf-fonts-1-r2 to /
+1792104378:  >>> emerge (27 of 363) dev-libs/libunistring-1.4.2 to /
+1792104378:  === (27 of 363) Cleaning (dev-libs/libunistring-1.4.2::/var/db/repos/gentoo/dev-libs/libunistring/libunistring-1.4.2.ebuild)
+1792104378:  === (27 of 363) Compiling/Merging (dev-libs/libunistring-1.4.2::/var/db/repos/gentoo/dev-libs/libunistring/libunistring-1.4.2.ebuild)
+{
+  "command_sha256": "4009c2fa43ed096e464424a9bee1cf706c8eecae2026be0427034acd90469a8c",
+  "complete": false,
+  "completed": [],
+  "package_set": "base",
+  "schema_version": 1,
+  "started": 0,
+  "storage_plan_sha256": "b98af0618558c362a74eac5a304cb1697966e57a69e34c56845117d44dfea4f4"
+}

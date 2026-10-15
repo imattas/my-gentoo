@@ -1,0 +1,27 @@
+{
+  "btrfs_uuid": "5800d3d0-cb28-4f70-a298-695919da3d78",
+  "efi_uuid": "6D76-CFC7",
+  "files_written": [
+    "etc/dracut.conf.d/gentoo-workstation.conf",
+    "etc/fstab",
+    "etc/hostname",
+    "etc/kernel/cmdline",
+    "etc/locale.conf",
+    "etc/locale.gen",
+    "etc/portage/binrepos.conf/gentoobinhost.conf",
+    "etc/portage/make.conf",
+    "etc/portage/package.accept_keywords/gentoo-workstation",
+    "etc/portage/package.license/gentoo-workstation",
+    "etc/portage/package.use/gentoo-workstation",
+    "etc/portage/repos.conf/gentoo.conf",
+    "etc/sudoers.d/10-gentoo-workstation-wheel",
+    "etc/timezone"
+  ],
+  "hostname": "gentoo-rehearsal",
+  "locale": "en_US.UTF-8",
+  "luks_uuid": "a5b9dddc-f424-44d6-a4ac-70fc7cf7a7c8",
+  "profile": "default/linux/amd64/23.0/desktop/plasma/systemd",
+  "schema_version": 1,
+  "storage_plan_sha256": "b98af0618558c362a74eac5a304cb1697966e57a69e34c56845117d44dfea4f4",
+  "timezone": "America/New_York"
+}

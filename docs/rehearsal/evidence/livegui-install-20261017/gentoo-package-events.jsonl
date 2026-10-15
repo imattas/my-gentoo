@@ -1,0 +1,1 @@
+{"argv": ["chroot", "/mnt/gentoo", "emerge", "--ask=n", "--verbose", "--update", "--deep", "--newuse", "--with-bdeps=y", "@world"], "event": "package-command-started", "index": 0, "package_set": "base", "time": "2026-10-15T22:43:35.433592+00:00"}

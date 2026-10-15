@@ -1,0 +1,2 @@
+{"archive": "stage3-amd64-systemd-20261011T170049Z.tar.xz", "event": "stage3-extraction-started", "sha512": "11afc773b4874b673a7d218f3c40054de7438fda28930cf15eaccde5bf71dfc1bbdbf40aa07e60708469e042afa37beb4a7e0eaabd7661308d5414eee4ef4899", "target": "/mnt/gentoo", "time": "2026-10-15T22:42:38.970334+00:00"}
+{"event": "stage3-extraction-completed", "sha512": "11afc773b4874b673a7d218f3c40054de7438fda28930cf15eaccde5bf71dfc1bbdbf40aa07e60708469e042afa37beb4a7e0eaabd7661308d5414eee4ef4899", "target": "/mnt/gentoo", "time": "2026-10-15T22:42:45.451144+00:00"}

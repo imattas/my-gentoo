@@ -1,0 +1,13 @@
+{
+  "authorized_at": "2026-10-15T22:40:17.165446+00:00",
+  "authorized_operation": "partition-and-format-system-disk",
+  "plan_sha256": "b98af0618558c362a74eac5a304cb1697966e57a69e34c56845117d44dfea4f4",
+  "schema_version": 1,
+  "single_disk_scope": true,
+  "target": {
+    "by_id": "/dev/disk/by-id/virtio-GQ-LIVEGUI-INSTALL-2",
+    "model": "",
+    "observed_device_path": "/dev/vda",
+    "serial": "GQ-LIVEGUI-INSTALL-2"
+  }
+}

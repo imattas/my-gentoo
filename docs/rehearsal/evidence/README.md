@@ -58,7 +58,19 @@ qemu-system-x86_64 \
 Use the newly downloaded ISO's verified path and a fresh OVMF variable store.
 The exact release ISO used here was `livegui-amd64-20260913T163055Z.iso`.
 
-## Latest full LiveGUI run: interrupted desktop merge
+## Clean-target LiveGUI retry in progress
+
+The current attempt uses a fresh blank 100 GiB target qcow2 and the separate
+16 GiB state disk. The previous encrypted target remains preserved and
+detached. Runtime discovery, exact-identity plan validation, and authorization
+passed for the fresh target. GPT/EFI/LUKS2/Btrfs setup, signed Stage 3
+verification and extraction, signed repository sync, and configuration
+completed. The 363-package base world merge is running; its checkpoint and
+latest progress evidence are in
+[the retry folder](livegui-install-20261017/README.md). Full install, reboot,
+unlock, and first-user login gates remain open for this attempt.
+
+## Previous LiveGUI run: interrupted desktop merge
 
 This attempt used a disposable 100 GiB target and separate 16 GiB state disk.
 The persistent journal confirms base package and kernel commands completed,

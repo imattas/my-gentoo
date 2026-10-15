@@ -1,0 +1,328 @@
+{
+  "block_devices": [
+    {
+      "by_id": [],
+      "fstype": "squashfs",
+      "model": null,
+      "mountpoints": [
+        "/run/rootfsbase"
+      ],
+      "name": "loop0",
+      "partlabel": null,
+      "partuuid": null,
+      "path": "/dev/loop0",
+      "pkname": null,
+      "pttype": null,
+      "serial": null,
+      "size": 4176941056,
+      "tran": null,
+      "type": "loop",
+      "wwn": null
+    },
+    {
+      "by_id": [
+        "/dev/disk/by-id/usb-QEMU_QEMU_HARDDISK_1-0000:00:02.0-1-0:0"
+      ],
+      "children": [
+        {
+          "fstype": null,
+          "model": null,
+          "mountpoints": [],
+          "name": "sda1",
+          "partlabel": "Gap0",
+          "partuuid": "07190310-0d72-477e-bc13-a651542b7b7e",
+          "path": "/dev/sda1",
+          "pkname": "sda",
+          "pttype": "gpt",
+          "serial": null,
+          "size": 288768,
+          "tran": null,
+          "type": "part",
+          "wwn": null
+        },
+        {
+          "fstype": "vfat",
+          "model": null,
+          "mountpoints": [],
+          "name": "sda2",
+          "partlabel": "EFI boot partition",
+          "partuuid": "07190310-0d72-477e-bc10-a651542b7b7e",
+          "path": "/dev/sda2",
+          "pkname": "sda",
+          "pttype": "gpt",
+          "serial": null,
+          "size": 2949120,
+          "tran": null,
+          "type": "part",
+          "wwn": null
+        },
+        {
+          "fstype": "hfsplus",
+          "model": null,
+          "mountpoints": [
+            "/run/initramfs/live"
+          ],
+          "name": "sda3",
+          "partlabel": "HFSPLUS",
+          "partuuid": "07190310-0d72-477e-bc11-a651542b7b7e",
+          "path": "/dev/sda3",
+          "pkname": "sda",
+          "pttype": "gpt",
+          "serial": null,
+          "size": 4315740160,
+          "tran": null,
+          "type": "part",
+          "wwn": null
+        },
+        {
+          "fstype": null,
+          "model": null,
+          "mountpoints": [],
+          "name": "sda4",
+          "partlabel": "Gap1",
+          "partuuid": "07190310-0d72-477e-bc16-a651542b7b7e",
+          "path": "/dev/sda4",
+          "pkname": "sda",
+          "pttype": "gpt",
+          "serial": null,
+          "size": 307200,
+          "tran": null,
+          "type": "part",
+          "wwn": null
+        }
+      ],
+      "fstype": "iso9660",
+      "model": "QEMU HARDDISK",
+      "mountpoints": [],
+      "name": "sda",
+      "partlabel": null,
+      "partuuid": null,
+      "path": "/dev/sda",
+      "pkname": null,
+      "pttype": "gpt",
+      "serial": "1-0000:00:02.0-1",
+      "size": 4319342592,
+      "tran": "usb",
+      "type": "disk",
+      "wwn": null
+    },
+    {
+      "by_id": [
+        "/dev/disk/by-id/ata-QEMU_DVD-ROM_QM00005"
+      ],
+      "fstype": null,
+      "model": "QEMU DVD-ROM",
+      "mountpoints": [],
+      "name": "sr0",
+      "partlabel": null,
+      "partuuid": null,
+      "path": "/dev/sr0",
+      "pkname": null,
+      "pttype": null,
+      "serial": "QM00005",
+      "size": 2048,
+      "tran": "sata",
+      "type": "rom",
+      "wwn": null
+    },
+    {
+      "by_id": [
+        "/dev/disk/by-id/virtio-GQ-LIVEGUI-INSTALL-2"
+      ],
+      "fstype": null,
+      "model": null,
+      "mountpoints": [],
+      "name": "vda",
+      "partlabel": null,
+      "partuuid": null,
+      "path": "/dev/vda",
+      "pkname": null,
+      "pttype": null,
+      "serial": "GQ-LIVEGUI-INSTALL-2",
+      "size": 107374182400,
+      "tran": "virtio",
+      "type": "disk",
+      "wwn": null
+    },
+    {
+      "by_id": [
+        "/dev/disk/by-id/virtio-GQ-LIVEGUI-STATE-202"
+      ],
+      "fstype": "ext4",
+      "model": null,
+      "mountpoints": [
+        "/mnt/recovery"
+      ],
+      "name": "vdb",
+      "partlabel": null,
+      "partuuid": null,
+      "path": "/dev/vdb",
+      "pkname": null,
+      "pttype": null,
+      "serial": "GQ-LIVEGUI-STATE-202",
+      "size": 17179869184,
+      "tran": "virtio",
+      "type": "disk",
+      "wwn": null
+    }
+  ],
+  "firmware": {
+    "boot_mode": "UEFI",
+    "efivars_mounted": true
+  },
+  "host": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD Ryzen 7 7800X3D 8-Core Processor",
+    "cpu_threads": 8,
+    "hostname": "livecd",
+    "memory_gib": 15.6
+  },
+  "mounts": [
+    {
+      "mountpoints": [
+        "/run/rootfsbase"
+      ],
+      "path": "/dev/loop0"
+    },
+    {
+      "mountpoints": [
+        "/mnt/recovery"
+      ],
+      "path": "/dev/vdb"
+    }
+  ],
+  "network": {
+    "default_routes": [
+      {
+        "dev": "enp0s5",
+        "dst": "default",
+        "flags": [],
+        "gateway": "10.0.2.2",
+        "metric": 100,
+        "prefsrc": "10.0.2.15",
+        "protocol": "dhcp"
+      }
+    ],
+    "interfaces": [
+      {
+        "addr_info": [
+          {
+            "broadcast": "127.255.255.255",
+            "family": "inet",
+            "label": "lo",
+            "local": "127.0.0.1",
+            "preferred_life_time": 4294967295,
+            "prefixlen": 8,
+            "scope": "host",
+            "valid_life_time": 4294967295
+          },
+          {
+            "family": "inet6",
+            "local": "::1",
+            "preferred_life_time": 4294967295,
+            "prefixlen": 128,
+            "protocol": "kernel_lo",
+            "scope": "host",
+            "valid_life_time": 4294967295
+          }
+        ],
+        "address": "00:00:00:00:00:00",
+        "broadcast": "00:00:00:00:00:00",
+        "flags": [
+          "LOOPBACK",
+          "UP",
+          "LOWER_UP"
+        ],
+        "group": "default",
+        "ifindex": 1,
+        "ifname": "lo",
+        "link_type": "loopback",
+        "mtu": 65536,
+        "operstate": "UNKNOWN",
+        "qdisc": "noqueue",
+        "txqlen": 1000
+      },
+      {
+        "addr_info": [
+          {
+            "broadcast": "10.0.2.255",
+            "dynamic": true,
+            "family": "inet",
+            "label": "enp0s5",
+            "local": "10.0.2.15",
+            "noprefixroute": true,
+            "preferred_life_time": 86260,
+            "prefixlen": 24,
+            "scope": "global",
+            "valid_life_time": 86260
+          },
+          {
+            "dynamic": true,
+            "family": "inet6",
+            "local": "fec0::ab1c:26e8:3853:858d",
+            "noprefixroute": true,
+            "preferred_life_time": 14261,
+            "prefixlen": 64,
+            "scope": "site",
+            "valid_life_time": 86261
+          },
+          {
+            "family": "inet6",
+            "local": "fe80::daf7:8bb1:36e8:ab2f",
+            "noprefixroute": true,
+            "preferred_life_time": 4294967295,
+            "prefixlen": 64,
+            "scope": "link",
+            "valid_life_time": 4294967295
+          }
+        ],
+        "address": "52:54:00:12:34:56",
+        "altnames": [
+          "enx525400123456"
+        ],
+        "broadcast": "ff:ff:ff:ff:ff:ff",
+        "flags": [
+          "BROADCAST",
+          "MULTICAST",
+          "UP",
+          "LOWER_UP"
+        ],
+        "group": "default",
+        "ifindex": 2,
+        "ifname": "enp0s5",
+        "link_type": "ether",
+        "mtu": 1500,
+        "operstate": "UP",
+        "qdisc": "fq_codel",
+        "txqlen": 1000
+      }
+    ],
+    "status": "observed"
+  },
+  "pci": {
+    "devices": [
+      "00:00.0 Host bridge [0600]: Intel Corporation 82G33/G31/P35/P31 Express DRAM Controller [8086:29c0]",
+      "00:01.0 VGA compatible controller [0300]: Device [1234:1111] (rev 02)",
+      "00:02.0 USB controller [0c03]: Red Hat, Inc. QEMU XHCI Host Controller [1b36:000d] (rev 01)",
+      "00:03.0 PCI bridge [0604]: Red Hat, Inc. QEMU PCIe Root port [1b36:000c]",
+      "00:04.0 PCI bridge [0604]: Red Hat, Inc. QEMU PCIe Root port [1b36:000c]",
+      "00:05.0 Ethernet controller [0200]: Intel Corporation 82540EM Gigabit Ethernet Controller [8086:100e] (rev 03)",
+      "00:1f.0 ISA bridge [0601]: Intel Corporation 82801IB (ICH9) LPC Interface Controller [8086:2918] (rev 02)",
+      "00:1f.2 SATA controller [0106]: Intel Corporation 82801IR/IO/IH (ICH9R/DO/DH) 6 port SATA Controller [AHCI mode] [8086:2922] (rev 02)",
+      "00:1f.3 SMBus [0c05]: Intel Corporation 82801I (ICH9 Family) SMBus Controller [8086:2930] (rev 02)",
+      "01:00.0 SCSI storage controller [0100]: Red Hat, Inc. Virtio 1.0 block device [1af4:1042] (rev 01)",
+      "02:00.0 SCSI storage controller [0100]: Red Hat, Inc. Virtio 1.0 block device [1af4:1042] (rev 01)"
+    ],
+    "status": "observed"
+  },
+  "read_only": true,
+  "schema_version": 1,
+  "target": {
+    "by_id": [
+      "/dev/disk/by-id/virtio-GQ-LIVEGUI-INSTALL-2"
+    ],
+    "match_count": 1,
+    "path": "/dev/vda",
+    "status": "identified"
+  }
+}

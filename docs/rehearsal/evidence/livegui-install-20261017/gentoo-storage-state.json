@@ -1,0 +1,110 @@
+{
+  "command_count": 28,
+  "completed": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+  ],
+  "last_verified_device_state": {
+    "children": [
+      {
+        "fstype": "vfat",
+        "model": null,
+        "mountpoints": [
+          "/mnt/gentoo/efi"
+        ],
+        "name": "vda1",
+        "partlabel": "GENTOO-ESP",
+        "partuuid": "9ac11786-a310-406f-834a-a4267167a456",
+        "path": "/dev/vda1",
+        "pkname": "vda",
+        "pttype": "gpt",
+        "serial": null,
+        "size": 2147483648,
+        "tran": "virtio",
+        "type": "part",
+        "wwn": null
+      },
+      {
+        "children": [
+          {
+            "fstype": "btrfs",
+            "model": null,
+            "mountpoints": [
+              "/mnt/gentoo/var/log",
+              "/mnt/gentoo/.snapshots",
+              "/mnt/gentoo/home",
+              "/mnt/gentoo"
+            ],
+            "name": "gentoo-root",
+            "partlabel": null,
+            "partuuid": null,
+            "path": "/dev/mapper/gentoo-root",
+            "pkname": "vda2",
+            "pttype": null,
+            "serial": null,
+            "size": 105208856064,
+            "tran": null,
+            "type": "crypt",
+            "wwn": null
+          }
+        ],
+        "fstype": "crypto_LUKS",
+        "model": null,
+        "mountpoints": [],
+        "name": "vda2",
+        "partlabel": "GENTOO-CRYPTROOT",
+        "partuuid": "daf7822c-82b2-423b-9f32-d73115988083",
+        "path": "/dev/vda2",
+        "pkname": "vda",
+        "pttype": "gpt",
+        "serial": null,
+        "size": 105225633280,
+        "tran": "virtio",
+        "type": "part",
+        "wwn": null
+      }
+    ],
+    "filesystem": null,
+    "model": "",
+    "mountpoints": [],
+    "partition_table": "gpt",
+    "path": "/dev/vda",
+    "serial": "GQ-LIVEGUI-INSTALL-2",
+    "size_bytes": 107374182400
+  },
+  "plan_sha256": "b98af0618558c362a74eac5a304cb1697966e57a69e34c56845117d44dfea4f4",
+  "schema_version": 1,
+  "started": null,
+  "target": {
+    "by_id": "/dev/disk/by-id/virtio-GQ-LIVEGUI-INSTALL-2",
+    "model": "",
+    "observed_device_path": "/dev/vda",
+    "serial": "GQ-LIVEGUI-INSTALL-2"
+  }
+}
