@@ -31,4 +31,3 @@ warning: in the working copy of 'installer/provisioning/packages.py', LF will be
 warning: in the working copy of 'scripts/integration/luks-negative-unlock.sh', LF will be replaced by CRLF the next time Git touches it
 warning: in the working copy of 'tests/unit/test_provisioning.py', LF will be replaced by CRLF the next time Git touches it
 [exit 0]
-

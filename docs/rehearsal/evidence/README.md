@@ -168,7 +168,7 @@ record SHA-256 is
 `readiness-verification.log` preserves the reproducible unit, CLI integration,
 compile, and whitespace-check command output. It records 53 unit tests plus 6
 subtests and 6 temporary-EFI rollback integration cases passing. SHA-256:
-`b5f54ccd9a5450ad908583e007638b4e4c054fe4cb1466cc08346d781e42c5c3`.
+`92d363eed15b0ae6f1c380b9661f0023a0b573bcbae2c1a369838b67e1fbd77d`.
 The rollback integration fixture simulates a failed update by placing an
 invalid production image beside a known-good fallback; it verifies the CLI
 restores the fallback and refuses corrupt fallback images, an unmounted ESP,
