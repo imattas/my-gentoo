@@ -1,0 +1,12 @@
+client: restic 0.12.1 compiled with go1.18.1 on linux/amd64
+repository: temporary file-backed WSL repository; deleted on exit
+no parent snapshot found, will read all files
+
+Files:           1 new,     0 changed,     0 unmodified
+Dirs:            3 new,     0 changed,     0 unmodified
+Added to the repo: 1.492 KiB
+
+processed 1 files, 28 B in 0:00
+snapshot e138dc79 saved
+restoring <Snapshot e138dc79 of [/tmp/gentoo-restic-smoke.sdU8k2/source] at 2026-10-15 04:18:36.938337808 -0400 EDT by root@DESKTOP-SE6JAM0> to /tmp/gentoo-restic-smoke.sdU8k2/restore
+PASS	Restic backup and restore round-trip

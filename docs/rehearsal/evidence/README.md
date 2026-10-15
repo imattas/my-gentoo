@@ -194,3 +194,13 @@ SHA-256:
 
 - `gentoo-explicit-production-entry-boot.log`: `17dea1a88bda98b8177b395eca1c17162551ed30d749f1e7b38b1cb576636e46`
 - `gentoo-explicit-fallback-entry-boot.log`: `546f1d3b5bc7473d46870638321680d2abc2f0a572ae6941602824f5ef2a14e0`
+
+## Current WSL Restic fixture round trip
+
+`restic-smoke-wsl-current.log` captures a fresh execution of
+`scripts/backup-restore-smoke.sh` using Ubuntu WSL's Restic 0.12.1 and a
+temporary file-backed repository. The one-file fixture restored and passed the
+script's byte comparison. The temporary repository and password file were
+removed at exit; this is a client/script smoke test, not recovery from an
+independent backup disk. SHA-256:
+`6d0a503b93f4e2646f41cb05e77f1165da9cf991b9f9051c539a140e121b3aa4`.
