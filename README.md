@@ -19,8 +19,10 @@ separately protected WD_BLACK SN8100.
   separately gated gaming, development, virtualization, and backup groups
 - `install user`: desktop-gated local account creation with an interactive
   password prompt
-- Production boot, hardware runtime checks, QEMU install rehearsal, recovery
-  restore, and physical deployment remain unverified
+- Encrypted production and experimental kernel boots and console/SSH login are
+  verified in QEMU; a separate full install from Gentoo LiveGUI is in progress
+- Hardware runtime checks, independent recovery-media restore, and physical
+  deployment remain unverified
 
 The commands that partition or format storage are available only in the Gentoo
 Linux live environment. They fail on Windows. Review
