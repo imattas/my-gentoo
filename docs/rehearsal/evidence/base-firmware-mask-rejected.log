@@ -1,0 +1,29 @@
+
+ * IMPORTANT: 22 news items need reading for repository 'gentoo'.
+ * Use eselect news read to view new items.
+
+
+These are the packages that would be merged, in order:
+
+Calculating dependencies ... done!
+Dependency resolution took 0.49 s (backtrack: 0/20).
+
+[binhost] Local copy of remote index is within TTL and will be used.
+[gentoo] Local copy of remote index is within TTL and will be used.
+
+!!! All ebuilds that could satisfy "sys-kernel/linux-firmware" have been masked.
+!!! One of the following masked packages is required to complete your request:
+- sys-kernel/linux-firmware-99999999::gentoo (masked by: || ( ) linux-fw-redistributable license(s), missing keyword)
+A copy of the 'linux-fw-redistributable' license is located at '/var/db/repos/gentoo/licenses/linux-fw-redistributable'.
+
+- sys-kernel/linux-firmware-20260916::gentoo (masked by: || ( ) linux-fw-redistributable license(s), ~amd64 keyword)
+- sys-kernel/linux-firmware-20260910::gentoo (masked by: || ( ) linux-fw-redistributable license(s), ~amd64 keyword)
+- sys-kernel/linux-firmware-20260810::gentoo (masked by: || ( ) linux-fw-redistributable license(s), ~amd64 keyword)
+- sys-kernel/linux-firmware-20260622::gentoo (masked by: || ( ) linux-fw-redistributable license(s))
+- sys-kernel/linux-firmware-20260519::gentoo (masked by: || ( ) linux-fw-redistributable license(s))
+- sys-kernel/linux-firmware-20260410::gentoo (masked by: || ( ) linux-fw-redistributable license(s))
+- sys-kernel/linux-firmware-20260309::gentoo (masked by: || ( ) linux-fw-redistributable license(s))
+
+For more information, see the MASKED PACKAGES section in the emerge
+man page or refer to the Gentoo Handbook.
+

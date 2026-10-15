@@ -23,7 +23,7 @@ class FailedPackageCheckpointRecoveryTests(unittest.TestCase):
         }))
         (state / "gentoo-storage-state.json").write_text(json.dumps({"plan_sha256": "plan-hash"}))
         (state / "gentoo-base-config-state.json").write_text(json.dumps({"storage_plan_sha256": "plan-hash"}))
-        log = logs / "packages-base-command-1.log"
+        log = logs / "packages-base-command-1-attempt-02.log"
         log.write_text(log_text)
         events = [
             {"event": "package-command-started", "package_set": "base", "index": 0, "argv": commands[0]},

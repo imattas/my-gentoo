@@ -158,11 +158,15 @@ Available profile symlink targets:
 
         base = render_emerge_commands(packages, "base", "/mnt/gentoo")
         desktop = render_emerge_commands(packages, "desktop", "/mnt/gentoo")
+        gaming = render_emerge_commands(packages, "gaming", "/mnt/gentoo")
 
-        self.assertTrue(all(isinstance(command, list) for command in base + desktop))
+        self.assertTrue(all(isinstance(command, list) for command in base + desktop + gaming))
         self.assertTrue(any("@world" in command for command in base))
         self.assertFalse(any("@world" in command for command in desktop))
         self.assertIn("kde-plasma/plasma-meta", desktop[0])
+        self.assertEqual(gaming[1][-2:], ["enable", "steam-overlay"])
+        self.assertEqual(gaming[2][-3:], ["sync", "-r", "steam-overlay"])
+        self.assertIn("games-util/steam-launcher::steam-overlay", gaming[-1])
         scripted = render_emerge_commands(packages, "desktop", non_interactive=True)
         self.assertTrue(all("--ask=n" in command for command in scripted[:1]))
         self.assertTrue(all("--ask" not in command for command in scripted))

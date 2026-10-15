@@ -139,12 +139,11 @@ python3 -m installer.cli install packages --set desktop \
 
 Gaming, development, virtualization, and backup packages are separate sets:
 run the same command with `--set gaming`, `development`, `virtualization`, or
-`security_backup` after the desktop set succeeds. The Steam client comes from
-Gentoo's separate `steam-overlay`; enable and review that repository in the
-target chroot before running the gaming set. For example, from the live system,
-run `chroot /mnt/gentoo eselect repository enable steam-overlay` followed by
-`chroot /mnt/gentoo emerge --sync`, then review the overlay's Steam ebuild and
-Portage changes before continuing. MangoHud and Nix are not in the current main
+`security_backup` after the desktop set succeeds. The gaming stage installs
+`eselect-repository` and Git, enables and syncs Gentoo's `steam-overlay`, then
+passes the Steam launcher atom from that repository to Portage. Review the
+package plan and any overlay keyword, license, or USE decisions before
+continuing. MangoHud and Nix are not in the current main
 Gentoo repository, so this installer does not add third-party overlays or run
 upstream installers for them. Gentoo may stop at a license,
 keyword, or USE-flag decision; review Portage's proposed changes and resolve

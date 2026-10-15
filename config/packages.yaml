@@ -40,7 +40,7 @@
       "sys-apps/zram-generator"
     ],
     "gaming": [
-      "games-util/steam-launcher",
+      "games-util/steam-launcher::steam-overlay",
       "games-util/gamemode",
       "gui-wm/gamescope"
     ],

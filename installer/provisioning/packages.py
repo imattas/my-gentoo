@@ -58,6 +58,13 @@ def render_emerge_commands(
             ]
         )
         commands.append(["systemctl", f"--root={target_root}", "set-default", "graphical.target"])
+    elif package_set == "gaming":
+        commands = [
+            prefix + confirmation + ["--verbose", "app-eselect/eselect-repository", "dev-vcs/git"],
+            ["chroot", target_root, "eselect", "repository", "enable", "steam-overlay"],
+            ["chroot", target_root, "emaint", "sync", "-r", "steam-overlay"],
+            prefix + confirmation + ["--verbose", *sets[package_set]],
+        ]
     return commands
 
 
@@ -110,7 +117,6 @@ def recover_failed_package_checkpoint(
     state_dir = state_dir.resolve(strict=True)
     state_path = state_dir / f"gentoo-packages-{package_set}.json"
     event_path = state_dir / "gentoo-package-events.jsonl"
-    log_path = state_dir / "logs" / f"packages-{package_set}-command-{command_index}.log"
     journal = json.loads(state_path.read_text(encoding="utf-8"))
     storage_state = json.loads((state_dir / "gentoo-storage-state.json").read_text(encoding="utf-8"))
     base_state = json.loads((state_dir / "gentoo-base-config-state.json").read_text(encoding="utf-8"))
@@ -135,9 +141,15 @@ def recover_failed_package_checkpoint(
         if event.get("event") == "package-command-failed"
         and event.get("package_set") == package_set
         and event.get("index") == command_index
-        and Path(event.get("log", "")).resolve() == log_path.resolve()
     ]
-    if not matching_failure or not log_path.is_file():
+    if not matching_failure:
+        raise RuntimeError("failed package event or its command log is missing")
+    failed_log = Path(matching_failure[-1].get("log", ""))
+    log_dir = (state_dir / "logs").resolve(strict=True)
+    if failed_log.is_symlink() or failed_log.resolve(strict=True).parent != log_dir:
+        raise RuntimeError("failed package log is outside the protected installer log directory")
+    log_path = failed_log.resolve(strict=True)
+    if not log_path.is_file():
         raise RuntimeError("failed package event or its command log is missing")
 
     log_bytes = log_path.read_bytes()
@@ -393,6 +405,17 @@ def run_package_stage(
     while len(journal["completed"]) < len(command_list):
         index = len(journal["completed"])
         command = command_list[index]
+        prior_attempts = 0
+        if event_path.is_file():
+            prior_attempts = sum(
+                1
+                for line in event_path.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+                and (event := json.loads(line)).get("event") == "package-command-started"
+                and event.get("package_set") == package_set
+                and event.get("index") == index
+            )
+        log_path = log_dir / f"packages-{package_set}-command-{index}-attempt-{prior_attempts + 1:02d}.log"
         journal["started"] = index
         _atomic_json(state_path, journal)
         _append_event(
@@ -406,7 +429,6 @@ def run_package_stage(
             },
         )
         print("Running: " + " ".join(command), flush=True)
-        log_path = log_dir / f"packages-{package_set}-command-{index}.log"
         try:
             command_result = runner(command, check=True, capture_output=True, text=True)
         except subprocess.CalledProcessError as exc:
