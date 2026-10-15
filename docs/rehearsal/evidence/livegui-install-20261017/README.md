@@ -16,10 +16,17 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - Stage 3 SHA512 and Gentoo release signatures verified; extraction completed.
 - The Gentoo repository snapshot signature verified. Configuration completed
   with profile `default/linux/amd64/23.0/desktop/plasma/systemd`.
-- The base `@world` set resolved 363 packages and was still running at the
-  latest capture. Gentoo's emerge log showed package 105/363 in progress at
-  23:15 UTC. The checkpoint correctly remains incomplete until the command
-  exits successfully.
+- The base `@world` set resolved 363 packages. The last captured Gentoo
+  emerge log reached package 110/363 (23:15 UTC); its checkpoint remains
+  incomplete.
+- A later live host inspection found QEMU PID 120557 still running and its
+  target qcow2 still attached. QEMU block statistics advanced from
+  5,256,160,256 to 5,277,172,736 target write bytes across consecutive
+  observations. The forwarded SSH endpoint did not identify the expected
+  guest: it reported Ubuntu 22.04 with a `microsoft-standard-WSL2` kernel and
+  no `/dev/vda` target. Current package progress is therefore unverified. The
+  VM and target were left running while investigating; no package completion
+  or installed-system boot is claimed.
 
 ## Evidence files
 
@@ -33,7 +40,10 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - `gentoo-packages-base.json` and `gentoo-package-events.jsonl` — base package
   checkpoint and command event log.
 - `base-progress-current.log` — QEMU block counters, active Portage process,
-  and Gentoo emerge log tail captured at 22:46 UTC.
+  and Gentoo emerge log tail captured at 23:15 UTC.
+- `live-host-observation-20261015T2326Z.md` — current QEMU state, target write
+  counters, and the SSH identity mismatch; it records why the 110/363 package
+  count remains the latest trustworthy progress.
 - `qemu-launch-command.txt` — the running headless QEMU invocation.
 
 The pre-install target copy was checked with `qemu-img check` and contained no
