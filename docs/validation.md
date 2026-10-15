@@ -36,13 +36,17 @@ commands are linked from `readiness-report.md` and the rehearsal evidence
 index.
 
 The previous-production UKI preservation and rollback CLI have integration
-tests on temporary EFI files, and the disposable LUKS negative-unlock test
+tests on temporary EFI files, and both current systemd-boot entries were
+rehearsed in QEMU to the LUKS prompt using a disposable qcow2 overlay. The
+production UKI's full unlock/login proof and the disposable LUKS negative-unlock test
 passed. Reproduce kernel recovery coverage with
 `python -m unittest discover -s tests/integration -v`; reproduce the LUKS check
 with `bash scripts/integration/luks-negative-unlock.sh` as root on Linux.
 Backup restore from recovery media, an actual QEMU boot after kernel rollback,
 remaining failure-injection executions, Wayland/GPU/audio/network workload
 checks, experimental kernel provisioning, and physical hardware validation are
-still open. Do not use the installer on a physical drive until the release gate
+still open. The follow-up menu boots stopped at LUKS because the disposable
+test key was removed; the earlier successful production UKI boot provides
+unlock/login validation. Do not use the installer on a physical drive until the release gate
 in `readiness-report.md` and the live-media plan review and backup/recovery gates
 have been completed.

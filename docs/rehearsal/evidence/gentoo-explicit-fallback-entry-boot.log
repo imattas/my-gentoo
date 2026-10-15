@@ -1,0 +1,13 @@
+QEMU/KVM UEFI boot evidence; no physical disk attached.
+
+Fallback-only menu:
+With other UKI candidates isolated in the disposable overlay, menu displayed only the previous-production fallback entry and its countdown selected it.
+
+The disposable copy-on-write overlay was based on target-boot.qcow2. This boot intentionally stopped at the LUKS2 prompt; no passphrase was entered because the disposable test key had been removed. This proves menu selection and UKI/initramfs reached encrypted-root unlock, not unlock or userspace login.
+
+Serial excerpts:
+Gentoo Linux                        Gentoo Workstation (previous production kernel)              Reboot Into Firmware Interface                                              Boot in 5s.                                                                    Boot in 4s.                                                                    Boot in 3s.                                                                    Boot in 2s.                                                                    Boot in 1s.                                  [    0.000000] Linux version 6.18.54-gentoo-dist-bin (root@devbox.amd64.dev.gentoo.org) (x86_64-pc-linux-gnu-gcc (Gentoo 15.3.0 p8) 15.3.0, GNU ld (Gentoo 2.46.1 p1) 2.46.1) #1 SMP PREEMPT_DYNAMIC Fri Sep 25 16:20:25 -00 2026
+[    0.000000] Command line: rd.luks.name=9bd5a0a5-f204-4d79-be18-8693bf596ffe=gentoo-root root=/dev/mapper/gentoo-root rootflags=subvol=@ rw console=ttyS0,115200n8
+[  OK  ] Found device /dev/disk/by-uuid/9bd5a0a5-f204-4d79-be18-8693bf596ffe.
+Starting Cryptography Setup for gentoo-root...
+Please enter passphrase for disk GENTOO-CRYPTROOT (gentoo-root): (press TAB for no echo)

@@ -174,3 +174,23 @@ invalid production image beside a known-good fallback; it verifies the CLI
 restores the fallback and refuses corrupt fallback images, an unmounted ESP,
 the wrong ESP partition identity, the wrong parent-disk serial, or a root that
 is not the expected Btrfs `@` mapper. It does not reboot a VM after rollback.
+
+## Current explicit systemd-boot production and fallback entries
+
+`gentoo-explicit-production-entry-boot.log` and
+`gentoo-explicit-fallback-entry-boot.log` record QEMU/KVM OVMF serial excerpts
+from boots of the current ESP menu configuration on a disposable qcow2
+copy-on-write overlay backed by the successful rehearsal target. The first
+boot displayed the explicit production entry and selected it after the five
+second default timeout. The second boot isolated other UKIs in that overlay so
+the previous-production fallback entry was the only choice. Both logs show
+Linux 6.18.54, the expected LUKS UUID, device discovery, and the cryptsetup
+passphrase prompt. No passphrase was entered: the disposable key had already
+been removed. Therefore these runs prove entry selection and boot to encrypted
+root unlock only; the earlier `gentoo-encrypted-boot-login.log` remains the
+unlock, mount, systemd, and login proof. No physical disk was attached.
+
+SHA-256:
+
+- `gentoo-explicit-production-entry-boot.log`: `17dea1a88bda98b8177b395eca1c17162551ed30d749f1e7b38b1cb576636e46`
+- `gentoo-explicit-fallback-entry-boot.log`: `546f1d3b5bc7473d46870638321680d2abc2f0a572ae6941602824f5ef2a14e0`
