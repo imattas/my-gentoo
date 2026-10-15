@@ -54,7 +54,7 @@ The full 9.1 MiB log is retained as `base-kernel-dracut-failure.log`.
 The base stage now installs Btrfs, cryptsetup, and dracut before a separate
 kernel command. Hash gated recovery installed `btrfs-progs`, ran the installed
 kernel's `emerge --config`, and reopened the package checkpoint. That generated
-a 138 MiB EFI UKI. `objdump -h` showed nonempty `.linux`, `.initrd`, and
+a 70 MiB (73,231,872 byte) EFI UKI. `objdump -h` showed nonempty `.linux`, `.initrd`, and
 `.cmdline` sections; `objdump -s -j .cmdline` showed the expected LUKS UUID,
 root mapper, Btrfs `@` subvolume, and `rw`. This is UKI construction evidence;
 it is not proof that systemd-boot can load or boot it.

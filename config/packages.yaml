@@ -7,7 +7,8 @@
     ["sys-libs/ncurses", "-gpm"],
     ["dev-python/pillow", "-truetype"],
     ["sys-apps/systemd", "boot", "ukify"],
-    ["sys-kernel/installkernel", "systemd", "dracut", "systemd-boot", "ukify", "uki"]
+    ["sys-kernel/installkernel", "systemd", "dracut", "systemd-boot", "ukify", "uki"],
+    ["x11-libs/libdrm", "video_cards_radeon"]
   ],
   "package_accept_keywords": [["sys-kernel/linux-firmware", "~amd64"]],
   "package_license": [["sys-kernel/linux-firmware", "linux-fw-redistributable"]],
@@ -30,13 +31,13 @@
     ],
     "desktop": [
       "kde-plasma/plasma-meta",
-      "kde-plasma/sddm",
+      "x11-misc/sddm",
       "media-video/pipewire",
       "media-video/wireplumber",
       "media-sound/alsa-utils",
       "media-libs/mesa",
       "media-libs/vulkan-loader",
-      "net-misc/networkmanager-applet",
+      "gnome-extra/nm-applet",
       "sys-apps/zram-generator"
     ],
     "gaming": [
