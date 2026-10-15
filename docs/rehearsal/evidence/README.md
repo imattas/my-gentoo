@@ -3,6 +3,48 @@
 These files come from builder state `/var/lib/gentoo-installer-run9`. The
 builder and target are QEMU qcow2 disks; no physical drives were attached.
 
+## Experimental source kernel build and failed encrypted boot
+
+`experimental-kernel-source-build.log.gz` is the full 102 MiB Portage output
+for this command in the disposable Gentoo target:
+
+```sh
+sudo chroot /mnt/gentoo emerge --ask=n --verbose --usepkg=n --getbinpkg=n \
+  =sys-kernel/gentoo-kernel-7.2.10
+```
+
+SHA-256 of
+the compressed log: `14cc9e4317ad1b86b59b94fe7694dbbc6573f89be6def32bf37acd47511a2c44`.
+Inspect with `gzip -cd docs/rehearsal/evidence/experimental-kernel-source-build.log.gz`.
+Portage completed `sys-kernel/gentoo-kernel-7.2.10` and
+`virtual/dist-kernel-7.2.10`; the resulting 7.2.10 UKI passed the installer's
+experimental staging command. The staging CLI reported `status: staged` and
+left `gentoo-production` as the default at that time.
+
+An OVMF boot then displayed and loaded the experimental UKI. Serial output
+identified `Linux version 7.2.10-gentoo-dist` and the expected
+`rd.luks.name=ffd9a81f-d7a9-4efa-818f-7f6ab30dda28=gentoo-root` and Btrfs `@`
+root arguments. It remained in dracut's initqueue waiting for
+`/dev/mapper/gentoo-root`; no LUKS prompt, mounted root, running systemd, or
+login was reached. Sending the disposable test passphrase had no effect.
+Therefore this is a failed boot test, not an experimental-kernel pass.
+
+The inspected source UKI reports dracut modules `crypt` and `crypt-lib`, and
+contains `dm-crypt.ko`. The source kernel config has `CONFIG_VIRTIO_BLK=y` and
+`CONFIG_DM_CRYPT=m`; the failure cause is not yet established. The
+reproducible first diagnostic is:
+
+```sh
+sudo chroot /mnt/gentoo lsinitrd /efi/EFI/Linux/gentoo-experimental.efi \
+  | grep -E 'virtio_blk|systemd-cryptsetup|systemd-crypt-generator|dm-crypt.ko|cryptsetup$'
+```
+
+The build output alone is not boot proof. The disposable ESP was returned to
+`default gentoo-production` after the experiment and the temporary
+`startup.nsh` helper was removed. The source build and failed serial session
+used only QEMU qcow2 disks with target serial `GQ-TARGET-261014`; no physical
+drive was attached.
+
 ## Completed Gentoo world merge
 
 - `packages-base-world.log.gz` is the installer captured output for command 0,
