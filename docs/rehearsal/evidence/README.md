@@ -229,3 +229,15 @@ before and after the boot, QEMU exited cleanly through QMP, and the qcow2 check
 reported no errors. This is a function-level rollback and boot rehearsal; the
 guarded `kernel-rollback` CLI was not invoked inside Gentoo. Evidence SHA-256:
 `d50f4c2ed6f73ebf422f1eb6eea4925caaa1308c13aaf1f8c31d945c8bb8162d`.
+
+## Current full test and static-check run
+
+`readiness-verification-current.log` records the latest unit and integration
+test runs plus compileall and whitespace checks. It reports 53 unit tests, 6
+unit subtests, and 11 integration tests passing. SHA-256:
+`c5bf4a050d7083c1a173690603fa16c6081f6d30558dd02fc2adb519bf7e2af6`.
+
+The two `recover-package` integration cases execute the CLI against a temporary
+state directory and a Gentoo-style unavailable-atom log. The correct confirmed
+log digest reopens the failed checkpoint; an incorrect digest is refused and
+leaves it closed. Neither case executes Portage or touches a block device.

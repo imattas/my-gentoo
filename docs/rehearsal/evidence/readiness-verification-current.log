@@ -1,0 +1,24 @@
+$ python -m pytest -q tests/unit
+.....................................................              [100%]
+53 passed, 6 subtests passed in 0.61s
+$ python -m unittest discover -s tests/integration -v
+test_cli_refuses_an_efi_mount_with_the_wrong_partition_identity (test_kernel_rollback.KernelRollbackIntegrationTests.test_cli_refuses_an_efi_mount_with_the_wrong_partition_identity) ... ok
+test_cli_refuses_an_esp_on_a_disk_with_the_wrong_serial (test_kernel_rollback.KernelRollbackIntegrationTests.test_cli_refuses_an_esp_on_a_disk_with_the_wrong_serial) ... ok
+test_cli_refuses_corrupt_fallback_and_keeps_current_image_untouched (test_kernel_rollback.KernelRollbackIntegrationTests.test_cli_refuses_corrupt_fallback_and_keeps_current_image_untouched) ... ok
+test_cli_refuses_to_write_when_the_efi_mount_is_missing (test_kernel_rollback.KernelRollbackIntegrationTests.test_cli_refuses_to_write_when_the_efi_mount_is_missing) ... ok
+test_cli_refuses_when_target_root_is_not_the_gentoo_btrfs_mapper (test_kernel_rollback.KernelRollbackIntegrationTests.test_cli_refuses_when_target_root_is_not_the_gentoo_btrfs_mapper) ... ok
+test_cli_restores_previous_uki_after_simulated_failed_update (test_kernel_rollback.KernelRollbackIntegrationTests.test_cli_restores_previous_uki_after_simulated_failed_update) ... ok
+test_cli_keeps_checkpoint_closed_when_failed_log_hash_differs (test_package_recovery_cli.PackageRecoveryCliIntegrationTests.test_cli_keeps_checkpoint_closed_when_failed_log_hash_differs) ... ok
+test_cli_reopens_checkpoint_for_hash_confirmed_unavailable_atom (test_package_recovery_cli.PackageRecoveryCliIntegrationTests.test_cli_reopens_checkpoint_for_hash_confirmed_unavailable_atom) ... ok
+test_cli_does_not_replay_a_storage_command_marked_interrupted (test_storage_resume.StorageResumeIntegrationTests.test_cli_does_not_replay_a_storage_command_marked_interrupted) ... ok
+test_cli_rejects_changed_target_identity_before_running_writes (test_storage_resume.StorageResumeIntegrationTests.test_cli_rejects_changed_target_identity_before_running_writes) ... ok
+test_cli_rejects_corrupt_storage_checkpoint_before_running_writes (test_storage_resume.StorageResumeIntegrationTests.test_cli_rejects_corrupt_storage_checkpoint_before_running_writes) ... ok
+
+----------------------------------------------------------------------
+Ran 11 tests in 0.173s
+
+OK
+$ python -m compileall -q installer tests
+PASS
+$ git diff --check
+PASS
