@@ -23,6 +23,29 @@ If the labels are absent or the mapping fails, stop and inspect with `lsblk -f`
 and `cryptsetup luksDump`. Do not run formatting, repair, or write-mode mount
 commands as part of initial diagnosis.
 
+## Restic backup and restore check
+
+Install the `security_backup` package set, connect an independent backup
+destination, and create a protected Restic password file. From a root shell,
+configure the repository and key file, then initialize the repository once:
+
+```bash
+export RESTIC_REPOSITORY=/mnt/backup/gentoo-restic
+export RESTIC_PASSWORD_FILE=/root/.config/restic/gentoo-password
+chmod 600 "$RESTIC_PASSWORD_FILE"
+restic init
+bash scripts/backup.sh
+bash scripts/backup-restore-smoke.sh
+```
+
+`backup.sh` snapshots `/etc`, `/home`, and `/efi`; it does not prune old
+snapshots. The smoke script writes a uniquely tagged test snapshot, restores it
+to a fresh temporary directory, compares a known file, and removes only that
+temporary directory. Keep the repository and password file on independent
+storage; losing the password file makes the encrypted repository unreadable.
+The smoke test validates a small Restic round trip. It does not replace a
+separate full-system restore rehearsal from recovery media.
+
 ## Installation state
 
 Keep `gentoo-storage-state.json`, `gentoo-stage3-state.json`, package/user

@@ -148,7 +148,9 @@ Gentoo repository, so this installer does not add third-party overlays or run
 upstream installers for them. Gentoo may stop at a license,
 keyword, or USE-flag decision; review Portage's proposed changes and resolve
 those deliberately. The global profile stays stable; the config does not enable
-`~amd64` packages by default.
+`~amd64` packages by default. Live metadata validation scoped `~amd64` and
+`ValveSteamLicense` acceptance to the overlay Steam launcher and scoped
+`~amd64` to its masked multilib dependencies and Gamescope.
 
 Create the interactive login after the desktop stage. The password is entered
 through `passwd`'s terminal prompt; it is never passed in command arguments or

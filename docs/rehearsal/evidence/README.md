@@ -70,3 +70,15 @@ members with `tar -tzf gentoo-desktop-evidence.tar.gz`; inspect one with
 SHA-256 is `37685752c119ccaa5131f4ccada4216b03d845829cf1d937e6312c13a6bc26e1`.
 These logs prove package merge and recovery behavior only, not boot or desktop
 runtime behavior.
+
+## Restic smoke round trip
+
+`restic-smoke.log` records the `backup-restore-smoke.sh` run against Restic
+0.18.1 in the Ubuntu QEMU builder. It created one uniquely tagged snapshot in
+a repository stored on the builder disk, restored the fixture to a new
+temporary directory, and byte-compared the marker. The script returned
+`PASS`; log SHA-256:
+`6208f24ee9f92984404c2398bf343808dec9cf765f40db603a3763391c241c86`.
+This validates the script's round-trip logic and the builder's Restic client;
+the Gentoo `app-backup/restic` package and restore from the eventual independent
+physical backup destination remain to be tested.

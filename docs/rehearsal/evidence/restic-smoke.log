@@ -1,0 +1,11 @@
+no parent snapshot found, will read all files
+
+Files:           1 new,     0 changed,     0 unmodified
+Dirs:            3 new,     0 changed,     0 unmodified
+Added to the repository: 1.501 KiB (1.279 KiB stored)
+
+processed 1 files, 28 B in 0:00
+snapshot 854943e7 saved
+restoring snapshot 854943e7 of [/tmp/gentoo-restic-smoke.yP6NM5/source] at 2026-10-15 05:53:52.246269555 +0000 UTC by gentoo-rehearsal@gentoo-qemu-runner to /tmp/gentoo-restic-smoke.yP6NM5/restore
+Summary: Restored 4 files/dirs (28 B) in 0:00
+PASS	Restic backup and restore round-trip
