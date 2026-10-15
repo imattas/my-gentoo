@@ -50,6 +50,12 @@ def render_emerge_commands(
         commands.append(
             prefix + confirmation + ["--verbose", "sys-kernel/gentoo-kernel-bin"]
         )
+    elif package_set == "experimental_kernel":
+        commands.append(
+            prefix + confirmation + [
+                "--verbose", "--usepkg=n", "--getbinpkg=n", *sets[package_set]
+            ]
+        )
     else:
         commands.append(prefix + confirmation + ["--verbose", *sets[package_set]])
     if package_set == "base":

@@ -137,7 +137,8 @@ Available profile symlink targets:
             "sys-libs/libudev-compat ~amd64\n"
             "games-util/game-device-udev-rules ~amd64\n"
             "sys-firmware/edk2-bin ~amd64\n"
-            "sys-kernel/gentoo-kernel ~amd64\n",
+            "sys-kernel/gentoo-kernel ~amd64\n"
+            "virtual/dist-kernel ~amd64\n",
         )
         self.assertEqual(
             files["etc/portage/package.license/gentoo-workstation"],
@@ -192,7 +193,10 @@ Available profile symlink targets:
         self.assertNotIn("sys-devel/gdb", development[0])
         self.assertIn("sys-firmware/edk2-bin", virtualization[0])
         self.assertEqual(experimental_kernel[0][-1], "sys-kernel/gentoo-kernel")
+        self.assertIn("--usepkg=n", experimental_kernel[0])
+        self.assertIn("--getbinpkg=n", experimental_kernel[0])
         self.assertIn(["sys-kernel/gentoo-kernel", "~amd64"], packages["package_accept_keywords"])
+        self.assertIn(["virtual/dist-kernel", "~amd64"], packages["package_accept_keywords"])
         self.assertNotIn("sys-firmware/edk2", virtualization[0])
         self.assertIn(["net-libs/gnutls", "pkcs11", "tools"], packages["package_use"])
         self.assertIn(["sys-firmware/edk2-bin", "~amd64"], packages["package_accept_keywords"])

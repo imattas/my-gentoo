@@ -191,7 +191,8 @@ The rollback command validates the fallback UKI and embedded root command line
 before atomically replacing the production image. The checkpointed
 `experimental_kernel` package set builds Gentoo's `sys-kernel/gentoo-kernel`
 source distribution kernel alongside the production `gentoo-kernel-bin`
-package. It depends on the completed base stage and does not rewrite the
+package. It explicitly disables local and remote binary packages, so Portage
+compiles the source ebuild. It depends on the completed base stage and does not rewrite the
 production UKI or systemd-boot default. After it completes, inspect
 `/efi/EFI/Linux/` and pass its generated source-kernel UKI to
 `kernel-stage-experimental`; that command copies it to the isolated

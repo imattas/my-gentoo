@@ -18,7 +18,8 @@
     ["sys-libs/libudev-compat", "~amd64"],
     ["games-util/game-device-udev-rules", "~amd64"],
     ["sys-firmware/edk2-bin", "~amd64"],
-    ["sys-kernel/gentoo-kernel", "~amd64"]
+    ["sys-kernel/gentoo-kernel", "~amd64"],
+    ["virtual/dist-kernel", "~amd64"]
   ],
   "package_license": [
     ["sys-kernel/linux-firmware", "linux-fw-redistributable"],
