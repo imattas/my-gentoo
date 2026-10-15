@@ -16,12 +16,11 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - Stage 3 SHA512 and Gentoo release signatures verified; extraction completed.
 - The Gentoo repository snapshot signature verified. Configuration completed
   with profile `default/linux/amd64/23.0/desktop/plasma/systemd`.
-- The base `@world` set resolved 363 packages. A verified point-in-time copy
-  of the target shows package 173 completed and package 174 (`dev-util/spirv-tools`)
-  compiling at Ninja step 194/380 in the 23:47 UTC snapshot. Its command line
-  includes `-m32`, and a scan found no fatal error markers in the build log.
-  The latest installer checkpoint copy (23:40 UTC) remains incomplete, so no
-  merge completion is claimed.
+- The base `@world` set resolved 363 packages. The 23:52 UTC target snapshot
+  shows package 173 completed and package 174 (`dev-util/spirv-tools`)
+  compiling at Ninja step 319/380. The raw build log includes `-m32`, and a
+  scan found no fatal error markers. The latest installer checkpoint copy
+  (23:40 UTC) remains incomplete, so no merge completion is claimed.
 - Two point-in-time target and state copy pairs passed `qemu-img check`. Their
   filesystems were unlocked/mounted read-only to copy emerge logs and
   installer state; all inspection mounts and NBD connections were removed.
@@ -52,6 +51,9 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
   `spirv-tools-build-log-snapshot-20261015T2347Z.log` — read-only target
   snapshot showing package 173 complete and the multilib SPIR-V tools build
   underway at Ninja step 194/380.
+- `base-emerge-log-snapshot-20261015T2352Z.log` and
+  `spirv-tools-build-log-snapshot-20261015T2352Z.log` — later read-only target
+  snapshot showing the same build advanced to Ninja step 319/380.
 - `base-progress-current.log` — QEMU block counters, active Portage process,
   and Gentoo emerge log tail captured at 23:15 UTC.
 - `live-host-observation-20261015T2326Z.md` — QEMU state and SSH identity
@@ -62,6 +64,8 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
   package progress evidence.
 - `point-in-time-snapshot-20261015T2347Z.md` — package 174 compiler progress,
   32-bit build evidence, and filtered error scan.
+- `point-in-time-snapshot-20261015T2352Z.md` — subsequent build progress
+  evidence from the target copy.
 - `qemu-launch-command.txt` — the running headless QEMU invocation.
 
 The pre-install target copy was checked with `qemu-img check` and contained no
