@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import secrets
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
@@ -230,6 +231,113 @@ def verify_completed_stage(loopdev: str, by_id: Path, config: dict) -> None:
         print(f"PASS: {target} mounted from {subvolume}")
 
 
+def make_test_uki(command_line: str, kernel: bytes) -> bytes:
+    sections = (".linux", ".initrd", ".cmdline")
+    payloads = {
+        ".linux": kernel,
+        ".initrd": b"disposable initramfs fixture",
+        ".cmdline": command_line.encode("utf-8") + b"\0",
+    }
+    image = bytearray(0x500)
+    image[:2] = b"MZ"
+    struct.pack_into("<I", image, 0x3C, 0x40)
+    image[0x40:0x44] = b"PE\0\0"
+    struct.pack_into("<H", image, 0x46, len(sections))
+    struct.pack_into("<H", image, 0x54, 0xE0)
+    struct.pack_into("<H", image, 0x58, 0x20B)
+    struct.pack_into("<H", image, 0x9C, 10)
+    for index, name in enumerate(sections):
+        section = 0x138 + index * 40
+        image[section : section + 8] = name.encode().ljust(8, b"\0")
+        payload = payloads[name]
+        raw_offset = 0x200 + index * 0x100
+        struct.pack_into("<I", image, section + 16, len(payload))
+        struct.pack_into("<I", image, section + 20, raw_offset)
+        image[raw_offset : raw_offset + len(payload)] = payload
+    return bytes(image)
+
+
+def rehearse_guarded_kernel_rollback(
+    loopdev: str, temporary: Path, config: dict
+) -> None:
+    root = Path("/mnt/gentoo")
+    esp_partition = Path("/dev/disk/by-partlabel/GENTOO-ESP")
+    require_loop_mapper(loopdev)
+    require_loop_partition(esp_partition, loopdev, 1)
+    command_line = (
+        "rd.luks.name=12345678-1234-1234-1234-123456789abc=gentoo-root "
+        "root=/dev/mapper/gentoo-root rootflags=subvol=@ rw"
+    )
+    (root / "etc/kernel").mkdir(parents=True, exist_ok=True)
+    (root / "etc/kernel/cmdline").write_text(command_line, encoding="utf-8")
+    esp = root / "efi"
+    systemd = esp / "EFI/systemd"
+    linux = esp / "EFI/Linux"
+    systemd.mkdir(parents=True, exist_ok=True)
+    linux.mkdir(parents=True, exist_ok=True)
+    known_good = make_test_uki(command_line, b"known-good disposable kernel")
+    (systemd / "systemd-bootx64.efi").write_bytes(known_good)
+    (linux / "gentoo-fallback.efi").write_bytes(known_good)
+    production = linux / "gentoo-production.efi"
+    production.write_bytes(b"deliberately invalid updated UKI")
+
+    rescue_config = temporary / "rollback-workstation.json"
+    rescue_config.write_text(json.dumps(config), encoding="utf-8")
+    shim_dir = temporary / "rescue-command-shims"
+    shim_dir.mkdir(exist_ok=True)
+    real_lsblk = shutil.which("lsblk")
+    if not real_lsblk:
+        raise RuntimeError("rollback rehearsal requires lsblk")
+    lsblk = shim_dir / "lsblk"
+    lsblk.write_text(
+        "#!/usr/bin/env bash\n"
+        "if [[ \"$1\" == --noheadings && \"$2\" == --output && \"$3\" == PKNAME ]]; then\n"
+        "  device=$(readlink -f -- \"$4\")\n"
+        "  name=${device##*/}\n"
+        "  printf '%s\\n' \"${name%p1}\"\n"
+        "elif [[ \"$1\" == --nodeps && \"$2\" == --noheadings && \"$3\" == --output && \"$4\" == SERIAL ]]; then\n"
+        "  printf '%s\\n' \"$GENTOO_RESCUE_TEST_SERIAL\"\n"
+        "else\n"
+        f"  exec {real_lsblk!r} \"$@\"\n"
+        "fi\n",
+        encoding="utf-8",
+    )
+    lsblk.chmod(0o700)
+    env = os.environ.copy()
+    env.update(
+        {
+            "PATH": f"{shim_dir}:{env['PATH']}",
+            "GENTOO_RESCUE_TEST_SERIAL": config["storage"]["system_target"]["serial"],
+            "PYTHONPATH": str(ROOT),
+        }
+    )
+    command = [
+        sys.executable,
+        "-m",
+        "installer.cli",
+        "--config",
+        str(rescue_config),
+        "kernel-rollback",
+        "--root",
+        str(root),
+    ]
+    result = subprocess.run(command, cwd=ROOT, env=env, check=False, text=True, capture_output=True)
+    if result.returncode != 0:
+        raise RuntimeError(f"guarded kernel rollback CLI failed: {result.stderr.strip()}")
+    if production.read_bytes() != known_good or '"status": "rolled-back"' not in result.stdout:
+        raise RuntimeError("guarded kernel rollback CLI did not restore the valid fallback UKI")
+    print("PASS: guarded kernel-rollback CLI replaced the invalid UKI on the disposable VFAT ESP")
+
+    wrong_env = env.copy()
+    wrong_env["GENTOO_RESCUE_TEST_SERIAL"] = "GQ-UNAUTHORIZED-DISK"
+    refused = subprocess.run(command, cwd=ROOT, env=wrong_env, check=False, text=True, capture_output=True)
+    if refused.returncode != 2 or "not on the configured exact system disk" not in refused.stderr:
+        raise RuntimeError("guarded kernel rollback CLI did not reject a mismatched disk serial")
+    if production.read_bytes() != known_good:
+        raise RuntimeError("guarded kernel rollback CLI changed the UKI after identity refusal")
+    print("PASS: guarded kernel-rollback CLI refused a mismatched disk serial without writing")
+
+
 def rehearse_readonly_rescue(
     loopdev: str, temporary: Path, config: dict, keyfile: Path
 ) -> None:
@@ -238,7 +346,7 @@ def rehearse_readonly_rescue(
     rescue_config = temporary / "rescue-workstation.json"
     rescue_config.write_text(json.dumps(config), encoding="utf-8")
     shim_dir = temporary / "rescue-command-shims"
-    shim_dir.mkdir()
+    shim_dir.mkdir(exist_ok=True)
 
     real_lsblk = shutil.which("lsblk")
     real_cryptsetup = shutil.which("cryptsetup")
@@ -450,6 +558,7 @@ def main() -> int:
                 raise RuntimeError(f"storage stage returned {result['status']}")
             verify_completed_stage(loopdev, by_id, config)
             print(f"PASS: checkpoint state and event log persisted in {state_dir}")
+            rehearse_guarded_kernel_rollback(loopdev, temporary_path, config)
             rehearse_readonly_rescue(loopdev, temporary_path, config, keyfile)
             return 0
         finally:

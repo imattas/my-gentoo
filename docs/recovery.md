@@ -50,7 +50,10 @@ fallback image. Before writing, the CLI also requires the ESP to be mounted as
 VFAT, match the `GENTOO-ESP` partition label, and reside on the exact
 system-disk serial in `config/workstation.yaml`; the supplied root must be
 Btrfs subvolume `@` on `/dev/mapper/gentoo-root`. This command has been tested
-against temporary EFI fixtures; a post-rollback boot in QEMU remains
+against temporary EFI fixtures and on a real disposable LUKS/Btrfs/VFAT loop
+target. The loop rehearsal replaced a deliberately invalid production UKI and
+refused a mismatched disk serial without writing. The command has not been run
+inside the booted Gentoo VM, and a QEMU boot after the CLI rollback remains
 unverified. The custom experimental kernel build and signing flow are not
 implemented yet. The generated entries use systemd-boot's documented `efi`
 entry directive and loader timeout format

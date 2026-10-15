@@ -251,16 +251,20 @@ partitioning, LUKS2 formatting/opening, Btrfs and FAT32 formatting, all four
 Btrfs subvolumes, all planned mounts, and checkpoint/event-log persistence
 passed. The actual `scripts/rescue.sh` then reopened that LUKS2 filesystem,
 mounted Btrfs read-only, and retrieved a fixture file. A second invocation
-with a mismatched disk serial refused before opening a mapper. The harness
-cleans its temporary file, mounts, mapper, aliases, and loop device. WSL did
-not provide by-partlabel udev links, so the harness created temporary aliases
-only after direct GPT-label verification on the test loop partitions. It
-stubs the loop device's absent model/serial fields and supplies the test key
-through a temporary command wrapper. This proves storage and the rescue script
-on a disposable filesystem, not booted recovery media, an independent backup,
-a full installation rehearsal, or physical hardware.
+with a mismatched disk serial refused before opening a mapper. Before rescue,
+the harness ran the guarded `kernel-rollback` CLI against the mounted Btrfs
+root and VFAT ESP: it replaced a deliberately invalid production UKI from the
+validated fallback and refused a mismatched disk serial without writing. The
+harness cleans its temporary file, mounts, mapper, aliases, and loop device.
+WSL did not provide by-partlabel udev links, so the harness created temporary
+aliases only after direct GPT-label verification on the test loop partitions.
+It stubs the loop device's absent model/serial fields and supplies the test key
+through a temporary command wrapper. This proves real storage/rescue/rollback
+commands against disposable Linux filesystems, not rollback inside the booted
+Gentoo VM, a reboot after that invocation, booted recovery media, an independent
+backup, a full installation rehearsal, or physical hardware.
 Reproduce it with:
 `wsl.exe -d Ubuntu-22.04 -u root -- bash -lc 'cd
 /mnt/c/Users/ian/Downloads/genroo && PYTHONPATH=. python3
 scripts/integration/storage-stage-loop.py'`. SHA-256:
-`2d3e451fc643cc9ec9e65ad2b5376886879117dc6567bdd8910cac475cc33017`.
+`491591e112eabbb5bd5c19bb58781a42b8c9af90dc06e3d93c39ce3e2d1d6ef3`.

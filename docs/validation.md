@@ -53,9 +53,12 @@ script mounted Btrfs read-only, retrieved a fixture file, and refused a
 mismatched target serial without opening a mapping. The harness stubs only the
 QEMU-style model/serial fields absent from loop devices and injects the fixture
 key through a temporary wrapper; partitioning, encryption, filesystems,
-mounts, and retrieval use real Linux tools. This does not constitute a booted
-recovery-media test or validate physical-drive/firmware behavior. The captured
-run is
+mounts, and retrieval use real Linux tools. The guarded kernel rollback CLI
+also replaced an invalid UKI on the mounted disposable Btrfs/VFAT target and
+refused a mismatched serial without writing. This CLI rehearsal ran under
+Ubuntu, not inside the booted Gentoo VM; no reboot followed it. The test does
+not constitute a booted recovery-media check or validate physical-drive/
+firmware behavior. The captured run is
 [`storage-stage-loop.log`](rehearsal/evidence/storage-stage-loop.log).
 
 The previous-production UKI preservation and rollback CLI have integration
