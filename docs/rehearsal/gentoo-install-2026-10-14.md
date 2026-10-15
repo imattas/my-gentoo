@@ -72,22 +72,33 @@ at the disposable VM console if it is known; otherwise recreate the disposable
 target with an operator-known test key and repeat the rehearsal. Run state and
 logs remain in `/var/lib/gentoo-installer-run9` in the builder.
 
-The gaming package set completed after resolving its live keyword and license
-requirements against Gentoo metadata. Its command logs remain under
-`/var/lib/gentoo-installer-run9/logs`; Steam, Proton, and Gamescope runtime
-behavior is untested. The development package set is still compiling
-`llvm-core/lldb-22.1.8` from source. Virtualization and Gentoo `security_backup`
-package sets have not run. A Restic 0.18.1 fixture backup and restore round
-trip passed in the Ubuntu builder; its log and SHA-256 are recorded in
-[`evidence/README.md`](evidence/README.md). This does not validate Gentoo's
-Restic package or the eventual independent backup destination.
+Gaming, development, virtualization, and `security_backup` package sets are
+complete. The development set compiled LLDB and bpftrace from source. The
+virtualization set initially failed during premerge dependency resolution:
+QEMU's binpkg required `edk2-bin`, while the configured `edk2` atom blocked it;
+virt-manager also required GnuTLS `pkcs11` and `tools`. The config now selects
+`sys-firmware/edk2-bin ~amd64` and scopes the GnuTLS USE flags. Recovery was
+gated by the failed-log SHA-256, then the corrected 69-package set completed.
+The full Portage logs remain in `/var/lib/gentoo-installer-run9/logs` in the
+builder.
+
+QEMU 10.2.3 started a diskless paused guest using the builder's `/dev/kvm` and
+was stopped cleanly; no drive was attached. Gentoo Restic 0.19.1 passed the
+fixture restore test, backed up 673 files (155.630 MiB) from `/etc`, `/home`,
+and `/efi`, and restored `/etc/hostname` to a temporary directory for a
+successful byte comparison. Restic ran against a repository on the separate
+Ubuntu builder disk. Logs and hashes are recorded in
+[`evidence/README.md`](evidence/README.md); this is not an independent
+physical-media or full-system recovery-media restore rehearsal.
 
 ## Not yet proven
 
-This rehearsal completed package provisioning and installer UKI validation,
+This rehearsal completed all configured package sets and installer UKI
+validation, plus a diskless QEMU/KVM launch and partial Restic backup/restore,
 but has not rebooted from systemd-boot, unlocked LUKS from the initramfs,
 mounted Btrfs during target boot, reached systemd, or interactively logged in
-as the configured user. KDE, networking, audio, AMDGPU/RADV, 32-bit Vulkan,
-Steam, development, virtualization, backup restore, kernel rollback, and the
-full failure-injection matrix remain unverified. Do not treat this report as
+as the configured user. KDE Wayland, real networking, audio, AMDGPU/RADV,
+32-bit Vulkan, Steam/Proton, libvirt-managed guests, container workloads,
+kernel rollback, full system restore, and several failure-injection scenarios
+remain unverified. Do not treat this report as
 authorization to install on a physical drive.

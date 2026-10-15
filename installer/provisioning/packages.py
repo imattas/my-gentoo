@@ -178,6 +178,9 @@ def recover_failed_package_checkpoint(
         '!!! All ebuilds that could satisfy "' in log_text
         and "masked packages is required to complete your request" in log_text
     )
+    blocked_conflict = "Conflict:" in log_text and "blocks (" in log_text
+    use_conflict = "The following USE changes are necessary to proceed:" in log_text
+    premerge_resolution = unavailable_atom or masked_atom or blocked_conflict or use_conflict
     kernel_postinst = (
         "ERROR: sys-kernel/gentoo-kernel-bin-" in log_text
         and "failed (postinst phase)" in log_text
@@ -198,7 +201,7 @@ def recover_failed_package_checkpoint(
     if desktop_sysv_hook and desktop_repair is None:
         raise RuntimeError("known desktop service failure requires the explicit repair path")
     if not (kernel_postinst or desktop_sysv_hook) and (
-        not (unavailable_atom or masked_atom)
+        not premerge_resolution
         or ">>> emerge (" in log_text
         or "Compiling/Merging (" in log_text
         or "Merging Binary (" in log_text

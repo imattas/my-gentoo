@@ -134,7 +134,8 @@ Available profile symlink targets:
             "games-util/steam-launcher::steam-overlay ~amd64\n"
             "gui-wm/gamescope ~amd64\n"
             "sys-libs/libudev-compat ~amd64\n"
-            "games-util/game-device-udev-rules ~amd64\n",
+            "games-util/game-device-udev-rules ~amd64\n"
+            "sys-firmware/edk2-bin ~amd64\n",
         )
         self.assertEqual(
             files["etc/portage/package.license/gentoo-workstation"],
@@ -165,6 +166,7 @@ Available profile symlink targets:
         desktop = render_emerge_commands(packages, "desktop", "/mnt/gentoo")
         gaming = render_emerge_commands(packages, "gaming", "/mnt/gentoo")
         development = render_emerge_commands(packages, "development", "/mnt/gentoo")
+        virtualization = render_emerge_commands(packages, "virtualization", "/mnt/gentoo")
 
         self.assertTrue(all(isinstance(command, list) for command in base + desktop + gaming))
         self.assertTrue(any("@world" in command for command in base))
@@ -181,6 +183,10 @@ Available profile symlink targets:
         self.assertEqual(desktop[4][-2:], ["set-default", "graphical.target"])
         self.assertIn("dev-debug/gdb", development[0])
         self.assertNotIn("sys-devel/gdb", development[0])
+        self.assertIn("sys-firmware/edk2-bin", virtualization[0])
+        self.assertNotIn("sys-firmware/edk2", virtualization[0])
+        self.assertIn(["net-libs/gnutls", "pkcs11", "tools"], packages["package_use"])
+        self.assertIn(["sys-firmware/edk2-bin", "~amd64"], packages["package_accept_keywords"])
         self.assertFalse(any("enable" in command for command in desktop))
         self.assertEqual(gaming[1][-2:], ["enable", "steam-overlay"])
         self.assertEqual(gaming[2][-3:], ["sync", "-r", "steam-overlay"])

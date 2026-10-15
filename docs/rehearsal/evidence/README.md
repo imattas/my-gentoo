@@ -82,3 +82,45 @@ temporary directory, and byte-compared the marker. The script returned
 This validates the script's round-trip logic and the builder's Restic client;
 the Gentoo `app-backup/restic` package and restore from the eventual independent
 physical backup destination remain to be tested.
+
+## Gentoo Restic system backup and restore
+
+`restic-smoke-gentoo.log` records the fixture round trip using the installed
+Gentoo `app-backup/restic-0.19.1`; SHA-256:
+`9c4be7de367fc23dc2043c1c07c21e10ba1a6b7e2782009eee9749c671929b2c`.
+`restic-gentoo-system.log` records `scripts/backup.sh` snapshotting 673 files
+(155.630 MiB) from `/etc`, `/home`, and `/efi`, then restoring
+`/etc/hostname` from snapshot `ba736e8b` and byte-comparing it successfully;
+SHA-256: `0adc30fdd4b2cd2db408e0523bc2ef2bc339707ea02877abd8e6df4417969d71`.
+The encrypted repository and protected password file were stored on the
+separate Ubuntu builder disk and bind-mounted into the target for the test.
+This is a VM backup/restore check, not a physical independent destination or
+full recovery-media restore.
+
+## Gentoo QEMU/KVM runtime smoke
+
+`qemu-kvm-smoke.log` records QEMU 10.2.3 starting a paused `q35` machine with
+KVM acceleration, 128 MiB RAM, and no disks, firmware images, or network
+devices. It exited cleanly after SIGTERM and the temporary KVM bind mount was
+removed. SHA-256: `139e4cc1631319d98885b97578cedaedfa5572f21a07a2e7ba321f4750ff5ff3`.
+This validates the QEMU binary and KVM device access only; it does not validate
+libvirt or boot a guest OS.
+
+## Gentoo Portage package-set build logs
+
+`package-build-logs.tar.gz` contains the development and virtualization
+Portage command logs, including the failed premerge attempts and the successful
+retries. The development set first failed to resolve stale `sys-devel/gdb`,
+then completed after hash-reviewed recovery. Virtualization resolved two
+premerge package/USE conflicts before its successful third attempt. The
+installer's persisted package state marks both sets complete. Archive
+SHA-256:
+`693ca9e5fe57cda4ee78c04cdccbf3f32c8efb1412a7673cec74e40d2ca458ee`.
+
+Reproduce log inspection with:
+
+```sh
+tar -tzf docs/rehearsal/evidence/package-build-logs.tar.gz
+tar -xOzf docs/rehearsal/evidence/package-build-logs.tar.gz logs/packages-development-command-0-attempt-02.log | tail -30
+tar -xOzf docs/rehearsal/evidence/package-build-logs.tar.gz logs/packages-virtualization-command-0-attempt-03.log | tail -30
+```

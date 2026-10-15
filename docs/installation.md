@@ -151,6 +151,11 @@ those deliberately. The global profile stays stable; the config does not enable
 `~amd64` packages by default. Live metadata validation scoped `~amd64` and
 `ValveSteamLicense` acceptance to the overlay Steam launcher and scoped
 `~amd64` to its masked multilib dependencies and Gamescope.
+Virtualization validation also confirmed that the synced QEMU binpkg requires
+`sys-firmware/edk2-bin`; the config scopes its `~amd64` keyword acceptance and
+sets `net-libs/gnutls` `pkcs11` and `tools` only for the virt-manager
+dependency. Do not add the blocking `sys-firmware/edk2` source atom alongside
+that binpkg.
 
 Create the interactive login after the desktop stage. The password is entered
 through `passwd`'s terminal prompt; it is never passed in command arguments or

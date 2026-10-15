@@ -90,6 +90,25 @@ class FailedPackageCheckpointRecoveryTests(unittest.TestCase):
             )
             self.assertEqual(result["status"], "ready-to-resume")
 
+    def test_recovers_hash_confirmed_premerge_blocker_and_use_resolution(self):
+        failed = (
+            "[blocks B] sys-firmware/edk2 conflicts with sys-firmware/edk2-bin\n"
+            "Conflict: 2 blocks (2 unsatisfied)\n"
+            "The following USE changes are necessary to proceed:\n"
+            ">=net-libs/gnutls-3.8.13 pkcs11 tools\n"
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            state, package_config, log = self._fixture(
+                Path(temporary), failed, package_set="virtualization", command_index=0
+            )
+            digest = hashlib.sha256(log.read_bytes()).hexdigest()
+            result = recover_failed_package_checkpoint(
+                "virtualization", package_config, state, 0, digest, "plan-hash", non_interactive=True
+            )
+            journal = json.loads((state / "gentoo-packages-virtualization.json").read_text())
+            self.assertEqual(result["status"], "ready-to-resume")
+            self.assertIsNone(journal["started"])
+
     def test_kernel_postinst_recovery_requires_and_records_explicit_repair(self):
         failed = (
             "ERROR: sys-kernel/gentoo-kernel-bin-6.18.54 failed (postinst phase):\n"

@@ -1,0 +1,9 @@
+Gentoo target package: app-emulation/qemu-10.2.3-r2 (official binpkg); libvirt-12.6.0 and virt-manager-5.1.0-r1 also merged in the virtualization set.
+Host: isolated Ubuntu QEMU builder; /dev/kvm is its virtual KVM device.
+No disk, firmware image, network interface, or physical device was attached to this smoke VM.
+
+Command:
+qemu-system-x86_64 -machine q35,accel=kvm -m 128M -nodefaults -display none -S -daemonize -pidfile /tmp/gentoo-qemu-smoke.pid -monitor none
+
+QEMU launched successfully as PID 2465437. SIGTERM was sent using that command's pidfile; the process was absent afterward. The `/dev/kvm` bind mount into the target was unmounted and its placeholder removed. This verifies QEMU can initialize KVM in the VM, but does not test libvirt management or boot a guest OS.
+PASS QEMU KVM launch and cleanup.

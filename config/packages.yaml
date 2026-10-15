@@ -8,14 +8,16 @@
     ["dev-python/pillow", "-truetype"],
     ["sys-apps/systemd", "boot", "ukify"],
     ["sys-kernel/installkernel", "systemd", "dracut", "systemd-boot", "ukify", "uki"],
-    ["x11-libs/libdrm", "video_cards_radeon"]
+    ["x11-libs/libdrm", "video_cards_radeon"],
+    ["net-libs/gnutls", "pkcs11", "tools"]
   ],
   "package_accept_keywords": [
     ["sys-kernel/linux-firmware", "~amd64"],
     ["games-util/steam-launcher::steam-overlay", "~amd64"],
     ["gui-wm/gamescope", "~amd64"],
     ["sys-libs/libudev-compat", "~amd64"],
-    ["games-util/game-device-udev-rules", "~amd64"]
+    ["games-util/game-device-udev-rules", "~amd64"],
+    ["sys-firmware/edk2-bin", "~amd64"]
   ],
   "package_license": [
     ["sys-kernel/linux-firmware", "linux-fw-redistributable"],
@@ -77,7 +79,7 @@
       "app-emulation/virt-manager",
       "app-containers/distrobox",
       "app-containers/podman",
-      "sys-firmware/edk2"
+      "sys-firmware/edk2-bin"
     ],
     "security_backup": [
       "app-backup/restic",
