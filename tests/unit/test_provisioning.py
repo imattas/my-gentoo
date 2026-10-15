@@ -220,6 +220,68 @@ Available profile symlink targets:
                 (efi / "Linux" / "gentoo-production.efi").read_bytes(), generated.read_bytes()
             )
 
+    def test_boot_validation_preserves_previous_production_uki_as_fallback(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._prepare_boot_root(root)
+            efi = root / "efi" / "EFI"
+            (efi / "systemd").mkdir(parents=True)
+            linux_dir = efi / "Linux"
+            linux_dir.mkdir()
+            (efi / "systemd" / "systemd-bootx64.efi").write_bytes(efi_application_image())
+
+            previous = bytearray(efi_application_image())
+            previous[0x200:0x206] = b"oldimg"
+            production = linux_dir / "gentoo-production.efi"
+            production.write_bytes(previous)
+            generated = linux_dir / "gentoo-6.18.55.efi"
+            generated.write_bytes(efi_application_image())
+            experimental = linux_dir / "gentoo-experimental-test.efi"
+            experimental_image = bytearray(efi_application_image())
+            experimental_image[0x200:0x206] = b"expimg"
+            experimental.write_bytes(experimental_image)
+
+            validate_boot_assets(root)
+            validate_boot_assets(root)
+
+            self.assertEqual((linux_dir / "gentoo-fallback.efi").read_bytes(), bytes(previous))
+            self.assertEqual(production.read_bytes(), generated.read_bytes())
+            loader = root / "efi" / "loader"
+            self.assertEqual(
+                (loader / "loader.conf").read_text(encoding="utf-8"),
+                "default gentoo-production\ntimeout 5\n",
+            )
+            self.assertIn(
+                "efi /EFI/Linux/gentoo-fallback.efi",
+                (loader / "entries/gentoo-fallback.conf").read_text(encoding="utf-8"),
+            )
+
+    def test_kernel_rollback_restores_only_a_valid_fallback_uki(self):
+        from installer.provisioning.packages import rollback_production_uki
+
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._prepare_boot_root(root)
+            efi = root / "efi" / "EFI"
+            linux_dir = efi / "Linux"
+            linux_dir.mkdir(parents=True)
+            (efi / "systemd").mkdir()
+            (efi / "systemd" / "systemd-bootx64.efi").write_bytes(efi_application_image())
+            previous = bytearray(efi_application_image())
+            previous[0x200:0x206] = b"oldimg"
+            (linux_dir / "gentoo-fallback.efi").write_bytes(previous)
+            production = linux_dir / "gentoo-production.efi"
+            production.write_bytes(efi_application_image())
+
+            self.assertEqual(rollback_production_uki(root), "gentoo-production.efi")
+            self.assertEqual(production.read_bytes(), bytes(previous))
+
+            production.write_bytes(efi_application_image())
+            (linux_dir / "gentoo-fallback.efi").write_bytes(b"damaged fallback")
+            with self.assertRaisesRegex(RuntimeError, "fallback UKI"):
+                rollback_production_uki(root)
+            self.assertEqual(production.read_bytes(), efi_application_image())
+
     def test_boot_validation_requires_systemd_boot_and_a_production_uki(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

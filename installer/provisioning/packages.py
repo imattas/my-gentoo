@@ -10,6 +10,7 @@ from pathlib import Path
 import struct
 import subprocess
 import sys
+import tempfile
 from datetime import datetime, timezone
 from typing import Any, Callable
 
@@ -92,27 +93,128 @@ def validate_boot_assets(root: Path) -> list[str]:
         expected_cmdline = expected_cmdline_path.read_text(encoding="utf-8").split()
     except OSError as exc:
         raise RuntimeError("configured kernel command line is missing") from exc
+    if bootloader.is_symlink() or not _is_efi_application(bootloader):
+        raise RuntimeError("systemd-boot EFI application is missing or invalid")
     generated = [
         image
         for image in linux_dir.glob("*.efi")
-        if image != production
+        if image not in (production, linux_dir / "gentoo-fallback.efi")
+        and not image.name.startswith("gentoo-experimental-")
         and _is_unified_kernel_image(image)
         and _uki_has_command_line(image, expected_cmdline)
     ]
     if generated:
         source = max(generated, key=lambda image: image.stat().st_mtime_ns)
-        temporary = production.with_suffix(".efi.new")
         import shutil
 
-        shutil.copy2(source, temporary)
-        os.replace(temporary, production)
+        if (
+            not production.is_symlink()
+            and _is_unified_kernel_image(production)
+            and _uki_has_command_line(production, expected_cmdline)
+            and production.read_bytes() != source.read_bytes()
+        ):
+            _atomic_copy(production, linux_dir / "gentoo-fallback.efi")
+        _atomic_copy(source, production)
     if (
-        not _is_efi_application(bootloader)
+        production.is_symlink()
         or not _is_unified_kernel_image(production)
         or not _uki_has_command_line(production, expected_cmdline)
     ):
         raise RuntimeError("systemd-boot and a valid EFI application production UKI are required")
-    return [production.name]
+    fallback = linux_dir / "gentoo-fallback.efi"
+    if fallback.exists() and (
+        fallback.is_symlink()
+        or not _is_unified_kernel_image(fallback)
+        or not _uki_has_command_line(fallback, expected_cmdline)
+    ):
+        raise RuntimeError("previous production fallback UKI is invalid")
+    _write_systemd_boot_entries(efi, fallback.is_file())
+    installed = [production.name]
+    if fallback.is_file():
+        installed.append(fallback.name)
+    return installed
+
+
+def rollback_production_uki(root: Path) -> str:
+    """Restore the previous production UKI after validating its EFI contents."""
+    efi = root / "efi"
+    linux_dir = efi / "EFI" / "Linux"
+    bootloader = efi / "EFI" / "systemd" / "systemd-bootx64.efi"
+    fallback = linux_dir / "gentoo-fallback.efi"
+    production = linux_dir / "gentoo-production.efi"
+    expected_cmdline_path = root / "etc" / "kernel" / "cmdline"
+    try:
+        expected_cmdline = expected_cmdline_path.read_text(encoding="utf-8").split()
+    except OSError as exc:
+        raise RuntimeError("configured kernel command line is missing") from exc
+    if bootloader.is_symlink() or not _is_efi_application(bootloader):
+        raise RuntimeError("systemd-boot EFI application is missing or invalid")
+    if (
+        fallback.is_symlink()
+        or not _is_unified_kernel_image(fallback)
+        or not _uki_has_command_line(fallback, expected_cmdline)
+    ):
+        raise RuntimeError("known-good fallback UKI is missing, invalid, or has a stale command line")
+    _atomic_copy(fallback, production)
+    return production.name
+
+
+def _atomic_copy(source: Path, destination: Path) -> None:
+    import shutil
+
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=destination.name + ".", suffix=".new", dir=destination.parent
+    )
+    os.close(descriptor)
+    temporary = Path(temporary_name)
+    try:
+        shutil.copy2(source, temporary)
+        os.replace(temporary, destination)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _write_systemd_boot_entries(efi: Path, has_fallback: bool) -> None:
+    loader_dir = efi / "loader"
+    entries_dir = loader_dir / "entries"
+    for directory in (loader_dir, entries_dir):
+        if directory.is_symlink():
+            raise RuntimeError(f"refusing symlinked systemd-boot directory: {directory}")
+        directory.mkdir(exist_ok=True)
+
+    managed = {
+        loader_dir / "loader.conf": "default gentoo-production\ntimeout 5\n",
+        entries_dir / "gentoo-production.conf": (
+            "title Gentoo Workstation (production)\n"
+            "efi /EFI/Linux/gentoo-production.efi\n"
+        ),
+    }
+    fallback_entry = entries_dir / "gentoo-fallback.conf"
+    if has_fallback:
+        managed[fallback_entry] = (
+            "title Gentoo Workstation (previous production kernel)\n"
+            "efi /EFI/Linux/gentoo-fallback.efi\n"
+        )
+    elif fallback_entry.exists() or fallback_entry.is_symlink():
+        if fallback_entry.is_symlink() or not fallback_entry.is_file():
+            raise RuntimeError(f"refusing unsafe systemd-boot entry: {fallback_entry}")
+        fallback_entry.unlink()
+
+    for destination, contents in managed.items():
+        if destination.is_symlink():
+            raise RuntimeError(f"refusing symlinked systemd-boot file: {destination}")
+        descriptor, temporary_name = tempfile.mkstemp(
+            prefix=destination.name + ".", suffix=".new", dir=destination.parent
+        )
+        temporary = Path(temporary_name)
+        try:
+            with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as stream:
+                stream.write(contents)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(temporary, destination)
+        finally:
+            temporary.unlink(missing_ok=True)
 
 
 def recover_failed_package_checkpoint(

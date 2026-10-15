@@ -1,0 +1,34 @@
+$ python -m pytest -q tests/unit
+.....................................................              [100%]
+53 passed, 6 subtests passed in 0.62s
+[exit 0]
+
+$ python -m unittest discover -s tests/integration -v
+test_cli_refuses_an_efi_mount_with_the_wrong_partition_identity (test_kernel_rollback.KernelRollbackIntegrationTests.test_cli_refuses_an_efi_mount_with_the_wrong_partition_identity) ... ok
+test_cli_refuses_an_esp_on_a_disk_with_the_wrong_serial (test_kernel_rollback.KernelRollbackIntegrationTests.test_cli_refuses_an_esp_on_a_disk_with_the_wrong_serial) ... ok
+test_cli_refuses_corrupt_fallback_and_keeps_current_image_untouched (test_kernel_rollback.KernelRollbackIntegrationTests.test_cli_refuses_corrupt_fallback_and_keeps_current_image_untouched) ... ok
+test_cli_refuses_to_write_when_the_efi_mount_is_missing (test_kernel_rollback.KernelRollbackIntegrationTests.test_cli_refuses_to_write_when_the_efi_mount_is_missing) ... ok
+test_cli_refuses_when_target_root_is_not_the_gentoo_btrfs_mapper (test_kernel_rollback.KernelRollbackIntegrationTests.test_cli_refuses_when_target_root_is_not_the_gentoo_btrfs_mapper) ... ok
+test_cli_restores_previous_uki_after_simulated_failed_update (test_kernel_rollback.KernelRollbackIntegrationTests.test_cli_restores_previous_uki_after_simulated_failed_update) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.102s
+
+OK
+[exit 0]
+
+$ python -m compileall -q installer tests
+[exit 0]
+
+$ git diff --check
+warning: in the working copy of 'docs/installation.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/readiness-report.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/recovery.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/rehearsal/evidence/README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/validation.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'installer/cli.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'installer/provisioning/packages.py', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/integration/luks-negative-unlock.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'tests/unit/test_provisioning.py', LF will be replaced by CRLF the next time Git touches it
+[exit 0]
+

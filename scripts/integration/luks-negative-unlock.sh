@@ -16,9 +16,33 @@ done
 work_dir=$(mktemp -d "${TMPDIR:-/tmp}/gentoo-luks-integration.XXXXXX")
 loop_device=
 mapping_open=0
+close_mapping() {
+    local attempt
+    for attempt in 1 2 3 4 5; do
+        if cryptsetup close gentoo-luks-integration 2>"$work_dir/close.log"; then
+            if ! cryptsetup status gentoo-luks-integration >/dev/null 2>&1; then
+                mapping_open=0
+                if [[ $attempt -gt 1 ]]; then
+                    echo "NOTE: mapping close completed after $attempt attempts"
+                fi
+                return 0
+            fi
+        elif ! cryptsetup status gentoo-luks-integration >/dev/null 2>&1; then
+            mapping_open=0
+            if [[ $attempt -gt 1 ]]; then
+                echo "NOTE: mapping became inactive after $attempt close attempts"
+            fi
+            return 0
+        fi
+        sleep 1
+    done
+    cat "$work_dir/close.log" >&2
+    echo "FAIL: disposable device-mapper mapping would not close" >&2
+    return 1
+}
 cleanup() {
     if [[ $mapping_open -eq 1 ]]; then
-        cryptsetup close gentoo-luks-integration
+        close_mapping || return 1
     fi
     if [[ -n $loop_device ]]; then
         losetup --detach "$loop_device"
@@ -46,6 +70,5 @@ printf '%s' "$good_key" | cryptsetup open --test-passphrase --key-file - "$loop_
 printf '%s' "$good_key" | cryptsetup open --key-file - "$loop_device" gentoo-luks-integration
 mapping_open=1
 cryptsetup status gentoo-luks-integration >/dev/null
-cryptsetup close gentoo-luks-integration
-mapping_open=0
+close_mapping
 echo "PASS: correct disposable key opened and closed only the test mapping"

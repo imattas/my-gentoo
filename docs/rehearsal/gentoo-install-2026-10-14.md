@@ -95,8 +95,17 @@ physical-media or full-system recovery-media restore rehearsal.
 ## Remaining unverified functionality
 
 The disposable UEFI encrypted-boot and configured-user console-login gate has
-passed. KDE Wayland, real networking, audio, AMDGPU/RADV, 32-bit Vulkan,
-Steam/Proton, libvirt-managed guests, container workloads, recovery from a
-failed kernel update, full system restore from recovery media, and several
-failure-injection scenarios remain unverified. Do not treat this report as
-authorization to install on a physical drive.
+passed. The installer now preserves the previous production UKI, writes
+explicit systemd-boot production/fallback entries, and provides
+`kernel-rollback`; its CLI success and corrupt-fallback refusal have passed
+against temporary EFI fixtures. A file-backed LUKS2 integration run also
+proved wrong-key rejection and correct-key unlock, then removed its loop image.
+Reproduce with `python -m unittest discover -s tests/integration -v` and
+`bash scripts/integration/luks-negative-unlock.sh` (Linux root).
+
+No QEMU reboot after a forced bad kernel update and rollback has been performed.
+The custom experimental kernel build is unfinished. KDE Wayland, real
+networking, audio, AMDGPU/RADV, 32-bit Vulkan, Steam/Proton, libvirt-managed
+guests, container workloads, full system restore from recovery media, and
+several installer failure-injection executions remain unverified. Do not treat
+this report as authorization to install on a physical drive.

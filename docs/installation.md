@@ -176,5 +176,18 @@ python3 -m installer.cli install user \
 The base configuration uses the stable KDE/systemd desktop profile for the
 Stage 3 release, explicit AMD `VIDEO_CARDS`, 32-bit ABI support, and a
 memory-bounded build job count. The production kernel is `gentoo-kernel-bin`;
-the custom experimental kernel and Secure Boot signing remain separate work.
-The physical reboot and first actual unlock/boot remain operator-controlled.
+when a different valid production UKI is promoted, the installer saves the
+previous image as `gentoo-fallback.efi` and creates separate systemd-boot menu
+entries. The loader menu remains visible for five seconds and defaults to
+production. If an update fails, select “Gentoo Workstation (previous
+production kernel)” from the systemd-boot menu. After booting that image, run
+as root to restore it under the production filename:
+
+```bash
+python3 -m installer.cli kernel-rollback --root /
+```
+
+The rollback command validates the fallback UKI and embedded root command line
+before atomically replacing the production image. Custom experimental kernel
+build and Secure Boot signing remain unfinished. The physical reboot and first
+actual unlock/boot remain operator-controlled.

@@ -162,3 +162,15 @@ negative and positive key paths against disposable file-backed storage; it is
 not a substitute for the separate encrypted UEFI boot rehearsal. The output
 record SHA-256 is
 `e1cd52e7fcacfec6adbc03a58b2c5742fc687a1a3fbcacfc93d667d841e80b4c`.
+
+## Installer and rollback verification record
+
+`readiness-verification.log` preserves the reproducible unit, CLI integration,
+compile, and whitespace-check command output. It records 53 unit tests plus 6
+subtests and 6 temporary-EFI rollback integration cases passing. SHA-256:
+`b5f54ccd9a5450ad908583e007638b4e4c054fe4cb1466cc08346d781e42c5c3`.
+The rollback integration fixture simulates a failed update by placing an
+invalid production image beside a known-good fallback; it verifies the CLI
+restores the fallback and refuses corrupt fallback images, an unmounted ESP,
+the wrong ESP partition identity, the wrong parent-disk serial, or a root that
+is not the expected Btrfs `@` mapper. It does not reboot a VM after rollback.

@@ -7,6 +7,7 @@ from datetime import datetime
 import json
 import os
 from pathlib import Path
+import platform
 import subprocess
 import sys
 
@@ -130,7 +131,77 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="repair the recognized missing update-rc.d systemd enable hook before reopening the desktop checkpoint",
     )
+    rollback_parser = commands.add_parser(
+        "kernel-rollback",
+        help="restore a validated previous production UKI from a mounted target ESP",
+    )
+    rollback_parser.add_argument(
+        "--root", required=True, type=Path,
+        help="mounted Gentoo root (use / for the running installation or its rescue mount)",
+    )
     args = parser.parse_args(argv)
+
+    if args.command == "kernel-rollback":
+        try:
+            from installer.provisioning.packages import rollback_production_uki
+
+            if hasattr(os, "geteuid") and os.geteuid() != 0:
+                raise RuntimeError("kernel rollback requires root to update the mounted EFI partition")
+            if platform.system() != "Linux":
+                raise RuntimeError("kernel rollback can run only from Gentoo Linux or its recovery environment")
+            root = args.root.resolve(strict=True)
+            if not os.path.ismount(root / "efi"):
+                raise RuntimeError("target EFI filesystem must be mounted at <root>/efi")
+            root_mount = subprocess.run(
+                [
+                    "findmnt", "--evaluate", "--mountpoint", str(root), "--noheadings",
+                    "--output", "SOURCE,FSTYPE",
+                ],
+                check=True, capture_output=True, text=True,
+            ).stdout.strip().split()
+            if root_mount != ["/dev/mapper/gentoo-root[/@]", "btrfs"]:
+                raise RuntimeError("target root must be Btrfs subvolume @ on gentoo-root")
+            mounted = subprocess.run(
+                [
+                    "findmnt", "--evaluate", "--mountpoint", str(root / "efi"), "--noheadings",
+                    "--output", "SOURCE,FSTYPE",
+                ],
+                check=True, capture_output=True, text=True,
+            ).stdout.strip().split()
+            if len(mounted) != 2 or mounted[1] != "vfat":
+                raise RuntimeError("target ESP mount must be a single VFAT filesystem")
+            expected_esp = subprocess.run(
+                ["readlink", "-f", "/dev/disk/by-partlabel/GENTOO-ESP"],
+                check=True, capture_output=True, text=True,
+            ).stdout.strip()
+            mounted_esp = subprocess.run(
+                ["readlink", "-f", mounted[0]], check=True, capture_output=True, text=True
+            ).stdout.strip()
+            if not expected_esp or mounted_esp != expected_esp:
+                raise RuntimeError("mounted EFI filesystem is not the GENTOO-ESP partition")
+            config = load_config(args.config)
+            configured_serial = config["storage"]["system_target"].get("serial")
+            if not isinstance(configured_serial, str) or not configured_serial.strip():
+                raise RuntimeError("configured exact system-disk serial is missing")
+            expected_serial = configured_serial.strip().casefold()
+            parent = subprocess.run(
+                ["lsblk", "--noheadings", "--output", "PKNAME", mounted[0]],
+                check=True, capture_output=True, text=True,
+            ).stdout.strip()
+            if not parent:
+                raise RuntimeError("cannot identify the physical disk containing GENTOO-ESP")
+            actual_serial = subprocess.run(
+                ["lsblk", "--nodeps", "--noheadings", "--output", "SERIAL", f"/dev/{parent}"],
+                check=True, capture_output=True, text=True,
+            ).stdout.strip().casefold()
+            if not expected_serial or actual_serial != expected_serial:
+                raise RuntimeError("GENTOO-ESP is not on the configured exact system disk")
+            result = rollback_production_uki(root)
+        except (OSError, RuntimeError, subprocess.SubprocessError, KeyError, ValueError) as exc:
+            print(f"kernel rollback refused: {exc}", file=sys.stderr)
+            return 2
+        print(json.dumps({"status": "rolled-back", "production_uki": result}))
+        return 0
 
     if args.command == "inspect":
         try:

@@ -23,6 +23,31 @@ If the labels are absent or the mapping fails, stop and inspect with `lsblk -f`
 and `cryptsetup luksDump`. Do not run formatting, repair, or write-mode mount
 commands as part of initial diagnosis.
 
+## Failed production kernel update
+
+Each validated production UKI promotion keeps the previous production image at
+`/efi/EFI/Linux/gentoo-fallback.efi` and installs explicit production and
+fallback entries in systemd-boot. The menu defaults to production after five
+seconds. If the new kernel fails, select **Gentoo Workstation (previous
+production kernel)**. Once that system is running, run as root:
+
+```bash
+python3 -m installer.cli kernel-rollback --root /
+```
+
+This validates systemd-boot, the fallback UKI structure, and its embedded
+encrypted-root command line, then atomically restores it as
+`gentoo-production.efi`. It refuses a missing, corrupt, symlinked, or stale
+fallback image. Before writing, the CLI also requires the ESP to be mounted as
+VFAT, match the `GENTOO-ESP` partition label, and reside on the exact
+system-disk serial in `config/workstation.yaml`; the supplied root must be
+Btrfs subvolume `@` on `/dev/mapper/gentoo-root`. This command has been tested
+against temporary EFI fixtures; a post-rollback boot in QEMU remains
+unverified. The custom experimental kernel build and signing flow are not
+implemented yet. The generated entries use systemd-boot's documented `efi`
+entry directive and loader timeout format
+([upstream boot manager documentation](https://systemd.io/BOOT/)).
+
 ## Restic backup and restore check
 
 Install the `security_backup` package set, connect an independent backup
