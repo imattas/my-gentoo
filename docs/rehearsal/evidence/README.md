@@ -204,3 +204,15 @@ script's byte comparison. The temporary repository and password file were
 removed at exit; this is a client/script smoke test, not recovery from an
 independent backup disk. SHA-256:
 `6d0a503b93f4e2646f41cb05e77f1165da9cf991b9f9051c539a140e121b3aa4`.
+
+## Storage resume refusal integration checks
+
+`storage-resume-integration.log` records `python -m unittest discover -s
+tests/integration -v`, `python -m pytest -q tests/unit`, compileall, and
+`git diff --check`. The three new CLI-level integration cases enter through
+`resume storage` and verify that malformed checkpoint JSON, an unexpected disk
+serial, and a storage command already marked started each stop before calling
+the storage command runner. Discovery and command execution are controlled test
+fixtures; these cases do not write a block device. The full integration suite
+reports 9 passed; unit tests report 53 passed and 6 subtests passed. SHA-256:
+`bfd0ce6c11645aa21655d1a8a542154e3825cf0a52faa7479439729a308c6d3c`.

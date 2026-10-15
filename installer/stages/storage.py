@@ -271,7 +271,12 @@ def apply_storage_plan(
     event_path = state_dir / "gentoo-storage-events.jsonl"
     commands = plan["commands_for_review_only"]
     if state_path.exists():
-        journal = json.loads(state_path.read_text(encoding="utf-8"))
+        try:
+            journal = json.loads(state_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise RuntimeError("storage checkpoint is unreadable or corrupt; refusing to continue") from exc
+        if not isinstance(journal, dict):
+            raise RuntimeError("storage checkpoint is unreadable or corrupt; refusing to continue")
         if journal.get("plan_sha256") != plan["sha256"]:
             raise RuntimeError("existing checkpoint belongs to a different plan")
         if journal.get("command_count") != len(commands):
