@@ -16,17 +16,16 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - Stage 3 SHA512 and Gentoo release signatures verified; extraction completed.
 - The Gentoo repository snapshot signature verified. Configuration completed
   with profile `default/linux/amd64/23.0/desktop/plasma/systemd`.
-- The base `@world` set resolved 363 packages. The last captured Gentoo
-  emerge log reached package 110/363 (23:15 UTC); its checkpoint remains
-  incomplete.
-- A later live host inspection found QEMU PID 120557 still running and its
-  target qcow2 still attached. QEMU block statistics advanced from
-  5,256,160,256 to 5,277,172,736 target write bytes across consecutive
-  observations. The forwarded SSH endpoint did not identify the expected
-  guest: it reported Ubuntu 22.04 with a `microsoft-standard-WSL2` kernel and
-  no `/dev/vda` target. Current package progress is therefore unverified. The
-  VM and target were left running while investigating; no package completion
-  or installed-system boot is claimed.
+- The base `@world` set resolved 363 packages. A verified point-in-time copy
+  of the target shows package 158/363 (`dev-libs/popt`) in the 23:30 UTC
+  emerge log. The package checkpoint is incomplete (`complete: false`, no
+  completed commands), so no merge completion is claimed.
+- The point-in-time target and state copies passed `qemu-img check`. Their
+  filesystems were unlocked/mounted read-only to copy the emerge log and
+  installer state; the copies remain outside the repository. QEMU was still
+  running afterwards. Its current SSH forward identifies Ubuntu 22.04 with a
+  `microsoft-standard-WSL2` kernel and no `/dev/vda` target, so live package
+  position remains unknown. No installed-system boot is claimed.
 
 ## Evidence files
 
@@ -39,11 +38,16 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - `gentoo-base-config-state.json` — generated system configuration result.
 - `gentoo-packages-base.json` and `gentoo-package-events.jsonl` — base package
   checkpoint and command event log.
+- `base-emerge-log-snapshot.log`, `gentoo-packages-base-snapshot.json`, and
+  `gentoo-package-events-snapshot.jsonl` — copied from a read-only target and
+  state snapshot; the emerge log reaches package 158/363 and the installer
+  checkpoint remains incomplete.
 - `base-progress-current.log` — QEMU block counters, active Portage process,
   and Gentoo emerge log tail captured at 23:15 UTC.
-- `live-host-observation-20261015T2326Z.md` — current QEMU state, target write
-  counters, and the SSH identity mismatch; it records why the 110/363 package
-  count remains the latest trustworthy progress.
+- `live-host-observation-20261015T2326Z.md` — QEMU state and SSH identity
+  mismatch before point-in-time snapshot inspection.
+- `point-in-time-snapshot-20261015T2330Z.md` — snapshot creation, read-only
+  LUKS2/Btrfs inspection, backup checksums, checkpoint state, and commands.
 - `qemu-launch-command.txt` — the running headless QEMU invocation.
 
 The pre-install target copy was checked with `qemu-img check` and contained no
