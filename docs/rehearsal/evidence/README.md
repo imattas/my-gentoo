@@ -3,7 +3,7 @@
 These files come from builder state `/var/lib/gentoo-installer-run9`. The
 builder and target are QEMU qcow2 disks; no physical drives were attached.
 
-## Experimental source kernel build and failed encrypted boot
+## Experimental source kernel build and encrypted boot
 
 `experimental-kernel-source-build.log.gz` is the full 102 MiB Portage output
 for this command in the disposable Gentoo target:
@@ -21,29 +21,70 @@ Portage completed `sys-kernel/gentoo-kernel-7.2.10` and
 experimental staging command. The staging CLI reported `status: staged` and
 left `gentoo-production` as the default at that time.
 
-An OVMF boot then displayed and loaded the experimental UKI. Serial output
-identified `Linux version 7.2.10-gentoo-dist` and the expected
-`rd.luks.name=ffd9a81f-d7a9-4efa-818f-7f6ab30dda28=gentoo-root` and Btrfs `@`
-root arguments. It remained in dracut's initqueue waiting for
-`/dev/mapper/gentoo-root`; no LUKS prompt, mounted root, running systemd, or
-login was reached. Sending the disposable test passphrase had no effect.
-Therefore this is a failed boot test, not an experimental-kernel pass.
+The first OVMF boot exposed stale rehearsal state: `sys-apps/systemd-261.2`
+was installed without its `cryptsetup` USE flag, and the target's persisted
+`package.use` file omitted that flag. The initramfs had dracut's `crypt`
+module and `dm-crypt.ko`, but lacked `systemd-cryptsetup` and its generator.
+The repository config already enabled the flag; its unit fixture checks the
+rendered `sys-apps/systemd boot ukify cryptsetup` line. On the disposable
+target, the line was restored and Portage's pretend plan selected a systemd
+source rebuild with `cryptsetup*` enabled. The full command log is
+`systemd-cryptsetup-rebuild.log.gz` (SHA-256
+`41f9da47e8a0f98daa539b56f9fe70d750062e800b81e29ae1058d68d1792ef9`). The
+merge completed; the installed USE record includes `cryptsetup` and
+`/usr/lib/systemd/systemd-cryptsetup` exists.
 
-The inspected source UKI reports dracut modules `crypt` and `crypt-lib`, and
-contains `dm-crypt.ko`. The source kernel config has `CONFIG_VIRTIO_BLK=y` and
-`CONFIG_DM_CRYPT=m`; the failure cause is not yet established. The
-reproducible first diagnostic is:
+Reproduce the package rebuild with:
 
 ```sh
-sudo chroot /mnt/gentoo lsinitrd /efi/EFI/Linux/gentoo-experimental.efi \
-  | grep -E 'virtio_blk|systemd-cryptsetup|systemd-crypt-generator|dm-crypt.ko|cryptsetup$'
+sudo chroot /mnt/gentoo emerge --ask=n --verbose --usepkg=n --getbinpkg=n \
+  --oneshot sys-apps/systemd
+grep -w cryptsetup /mnt/gentoo/var/db/pkg/sys-apps/systemd-261.2/USE
+test -x /mnt/gentoo/usr/bin/systemd-cryptsetup
 ```
 
-The build output alone is not boot proof. The disposable ESP was returned to
-`default gentoo-production` after the experiment and the temporary
-`startup.nsh` helper was removed. The source build and failed serial session
-used only QEMU qcow2 disks with target serial `GQ-TARGET-261014`; no physical
-drive was attached.
+The regenerated source UKI was created with:
+
+```sh
+sudo chroot /mnt/gentoo emerge --ask=n --config =sys-kernel/gentoo-kernel-7.2.10
+```
+
+Its output is in `source-kernel-cryptsetup-uki-regeneration.log.gz` (SHA-256
+`13566dff406b1069427a58e856b080bea65cb5a760db8d0b764d4d6b5a03b37c`). The
+image was inspected before restaging:
+
+```sh
+sudo chroot /mnt/gentoo lsinitrd \
+  /efi/EFI/Linux/b9e356061f78ffd6207d6a6f6ad01cea-7.2.10-gentoo-dist.efi \
+  | grep -E 'systemd-cryptsetup|dracut-crypt-generator|cryptsetup$'
+```
+
+The output showed `usr/bin/systemd-cryptsetup`,
+`usr/lib/systemd/system-generators/systemd-cryptsetup-generator`, and
+`usr/lib/systemd/system-generators/dracut-crypt-generator`. The guarded
+staging CLI was rerun on this UKI:
+
+```sh
+cd /opt/my-gentoo
+sudo python3 -m installer.cli --config /tmp/workstation-qemu.json \
+  kernel-stage-experimental --root /mnt/gentoo \
+  --image /mnt/gentoo/efi/EFI/Linux/b9e356061f78ffd6207d6a6f6ad01cea-7.2.10-gentoo-dist.efi
+```
+
+It reported `status: staged`. OVMF and
+systemd-boot then loaded `gentoo-experimental.efi`; the serial console showed
+the 7.2.10 kernel, discovery of the LUKS UUID, cryptsetup prompt and successful
+unlock, Btrfs mounting the expected root, and transition into systemd. The
+configured `rehearsal` user then logged in over SSH. Sanitized serial and
+SSH/mount verification are in
+[`gentoo-experimental-first-boot-verification.log`](gentoo-experimental-first-boot-verification.log).
+
+At the end of the test the disposable ESP was restored to
+`default gentoo-production` and the temporary `startup.nsh` boot helper was
+removed. The source build, package rebuild, and both boot attempts used only
+QEMU qcow2 disks with target serial `GQ-TARGET-261014`; no physical drive was
+attached. The passphrase used to unlock this test disk is not in the logs or
+repository.
 
 ## Completed Gentoo world merge
 
@@ -308,8 +349,8 @@ aliases only after direct GPT-label verification on the test loop partitions.
 It stubs the loop device's absent model/serial fields and supplies the test key
 through a temporary command wrapper. This proves real storage/rescue/rollback/
 staging commands against disposable Linux filesystems, not rollback inside the
-booted Gentoo VM, a reboot after that invocation, source-built experimental
-kernel boot, booted recovery media, an independent backup, or physical hardware.
+booted Gentoo VM and a reboot after that invocation, booted recovery media, an
+independent backup, or physical hardware.
 Reproduce it with:
 `wsl.exe -d Ubuntu-22.04 -u root -- bash -lc 'cd
 /mnt/c/Users/ian/Downloads/genroo && PYTHONPATH=. python3

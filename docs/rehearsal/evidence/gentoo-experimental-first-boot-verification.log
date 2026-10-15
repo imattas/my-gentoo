@@ -1,0 +1,58 @@
+Experimental source-kernel encrypted UEFI boot verification
+Date: 2026-10-15
+Target: QEMU/KVM qcow2 disk, serial GQ-TARGET-261014; no physical drives attached
+Firmware: OVMF
+Boot path: systemd-boot -> gentoo-experimental.efi -> Gentoo 7.2.10 initramfs
+
+The first source UKI attempt stalled because the rehearsal target's installed
+sys-apps/systemd-261.2 lacked its cryptsetup USE flag. Its persisted package.use
+file also lacked that flag, despite config/packages.yaml and the repository
+unit fixture specifying it. The corrected target package.use entry was
+"sys-apps/systemd boot ukify cryptsetup". Portage source-built systemd-261.2;
+the installed USE record now includes cryptsetup and
+/usr/lib/systemd/systemd-cryptsetup exists.
+
+Regeneration command:
+  chroot /mnt/gentoo emerge --ask=n --config =sys-kernel/gentoo-kernel-7.2.10
+
+The regenerated source UKI was inspected with lsinitrd. It contains the
+systemd-cryptsetup binary, dracut-crypt-generator,
+systemd-cryptsetup-generator, and dracut crypt module.
+
+Boot observations:
+  Gentoo Linux (2.18) (gentoo-experimental.efi) selected as default
+  Linux version 7.2.10-gentoo-dist
+  Command line included:
+    rd.luks.name=ffd9a81f-d7a9-4efa-818f-7f6ab30dda28=gentoo-root
+    root=/dev/mapper/gentoo-root rootflags=subvol=@ rw
+  Initramfs found /dev/disk/by-uuid/ffd9a81f-d7a9-4efa-818f-7f6ab30dda28
+  Cryptography Setup for gentoo-root completed after entering the temporary
+  test passphrase; /dev/mapper/gentoo-root was found
+  Btrfs mounted /, /home, /.snapshots, and /var/log from @, @home,
+  @snapshots, and @log
+  The guest reached the graphical target, started NetworkManager, sshd,
+  SDDM, and the serial getty
+
+SSH verification command (key-authenticated as rehearsal):
+  uname -r
+  systemctl is-system-running
+  id
+  findmnt -no SOURCE,FSTYPE,OPTIONS /
+  findmnt -no SOURCE,FSTYPE,OPTIONS /home
+  findmnt -no SOURCE,FSTYPE,OPTIONS /.snapshots
+  findmnt -no SOURCE,FSTYPE,OPTIONS /var/log
+  findmnt -no SOURCE,FSTYPE,OPTIONS /efi
+
+Observed output:
+  uid=1000(rehearsal) gid=1000(rehearsal) groups=1000(rehearsal),10(wheel)
+  7.2.10-gentoo-dist
+  running
+  /dev/mapper/gentoo-root[/@] btrfs rw,noatime,compress=zstd:3,space_cache=v2,subvolid=256,subvol=/@
+  /dev/mapper/gentoo-root[/@home] btrfs rw,noatime,compress=zstd:3,space_cache=v2,subvolid=257,subvol=/@home
+  /dev/mapper/gentoo-root[/@snapshots] btrfs rw,noatime,compress=zstd:3,space_cache=v2,subvolid=258,subvol=/@snapshots
+  /dev/mapper/gentoo-root[/@log] btrfs rw,noatime,compress=zstd:3,space_cache=v2,subvolid=259,subvol=/@log
+  /dev/vda1 vfat rw,noatime,fmask=0077,dmask=0077,codepage=437,iocharset=ascii,shortname=mixed,errors=remount-ro
+
+This validates the source experimental kernel's encrypted QEMU boot and
+configured-user SSH login. It does not validate the physical GPU, network,
+audio, suspend/resume, Secure Boot, or real firmware/device behavior.
