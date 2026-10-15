@@ -1,0 +1,9 @@
+{
+  "command_sha256": "4009c2fa43ed096e464424a9bee1cf706c8eecae2026be0427034acd90469a8c",
+  "complete": false,
+  "completed": [],
+  "package_set": "base",
+  "schema_version": 1,
+  "started": 0,
+  "storage_plan_sha256": "b98af0618558c362a74eac5a304cb1697966e57a69e34c56845117d44dfea4f4"
+}
