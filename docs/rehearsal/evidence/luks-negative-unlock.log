@@ -1,0 +1,9 @@
+Command: bash scripts/integration/luks-negative-unlock.sh
+Environment: Ubuntu 22.04 under WSL2; root; file-backed 96 MiB temporary image attached through a newly allocated loop device.
+Physical devices: not used.
+
+No key available with this passphrase.
+PASS: LUKS2 rejected an incorrect key on the disposable loop device
+PASS: correct disposable key opened and closed only the test mapping
+
+Cleanup: the script closed the test mapping, detached its loop device, and removed its temporary image directory.

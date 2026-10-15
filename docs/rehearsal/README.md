@@ -1,10 +1,11 @@
 # QEMU builder and Gentoo installation rehearsal
 
 The builder booted on 2026-10-14. A Gentoo install rehearsal continued through
-2026-10-15 against a separate disposable encrypted qcow2 target. This document
-records the builder setup; the installation's current status and evidence are
-in [`gentoo-install-2026-10-14.md`](gentoo-install-2026-10-14.md). No physical
-drive was attached.
+2026-10-15 against a separate disposable encrypted qcow2 target. The target
+completed encrypted UEFI boot, Btrfs mounts, systemd startup, and configured
+user login. This document records the builder setup; current status and
+evidence are in [`gentoo-install-2026-10-14.md`](gentoo-install-2026-10-14.md).
+No physical drive was attached.
 
 The guest used 4 vCPUs, 8 GiB RAM, an Ubuntu cloud-image overlay, and a separate
 blank 140 GiB `target.qcow2`. Both disks were qcow2 files under
@@ -37,8 +38,9 @@ ssh -i id_ed25519 -p 2222 \
 ```
 
 The matching builder serial log is [`builder-serial.log`](builder-serial.log).
-The installer ran against the disposable target. It completed the Gentoo world
-merge and is resuming the remaining base package set. The target has not yet
-generated and booted the production UKI.
+The installer ran against the disposable target. Gentoo world and configured
+package sets completed, and the generated production UKI booted successfully
+after adding systemd's `cryptsetup` USE flag. See the rehearsal record for the
+boot and first-login evidence and for remaining unverified release gates.
 The cloud seed and ephemeral SSH private key remain outside the repository in
 the WSL rehearsal directory. Do not reuse the ephemeral key.

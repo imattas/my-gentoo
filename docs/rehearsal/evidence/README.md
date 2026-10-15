@@ -148,3 +148,17 @@ login password are not present in these evidence files. SHA-256 hashes:
 Reproduce the project-side UKI validation with the repository's boot asset
 validator against the rehearsal ESP mount. The successful VM output above is
 runtime evidence; package-install and UKI section inspection alone are not.
+
+## Disposable LUKS2 wrong-key integration test
+
+Run `bash scripts/integration/luks-negative-unlock.sh` as root on Linux with
+`cryptsetup`, `losetup`, and `truncate`. It creates a temporary file, attaches
+only that new file to an allocated loop device, formats LUKS2, rejects a wrong
+fixture key, then checks and opens the mapping with the correct fixture key.
+An exit trap closes the mapping, detaches the loop device, and removes the
+temporary directory. The run in this rehearsal passed under Ubuntu 22.04 in
+WSL2. Output is in `luks-negative-unlock.log`. This verifies cryptsetup's
+negative and positive key paths against disposable file-backed storage; it is
+not a substitute for the separate encrypted UEFI boot rehearsal. The output
+record SHA-256 is
+`e1cd52e7fcacfec6adbc03a58b2c5742fc687a1a3fbcacfc93d667d841e80b4c`.

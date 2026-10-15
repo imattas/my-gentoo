@@ -26,12 +26,17 @@ boot a disposable KVM guest, restore a sample file from an independent Restic
 repository, and boot rescue media to retrieve a file. Record evidence and
 results before describing those capabilities as working.
 
-The OVMF/QEMU disposable Ubuntu builder completed the Gentoo base world, base,
-and desktop package sets. The installer validates the generated production UKI,
-and the evidence archive records package failures and reviewed recoveries. The
-LUKS test passphrase is unavailable in the current rehearsal context, so
-systemd-boot reboot, encrypted unlock, first login, and desktop runtime remain
-unverified. Backup restore, kernel rollback, and several failure-injection
-scenarios also remain open. Do not use the installer on a physical drive until
-the release gate in `readiness-report.md` and the live-media plan review and
-backup/recovery gates have been completed.
+The OVMF/QEMU disposable builder completed the Gentoo base world, configured
+package sets, and production UKI boot. The VM unlocked LUKS2, mounted the
+configured Btrfs subvolumes, reached systemd `running`, and accepted login as
+the configured user. The file-backed LUKS negative-unlock integration test
+also passed: a wrong test key was rejected and the correct test key opened only
+the temporary loop mapping; its image and mapping were removed. Logs and exact
+commands are linked from `readiness-report.md` and the rehearsal evidence
+index.
+
+Backup restore from recovery media, kernel-update rollback, remaining
+failure-injection tests, Wayland/GPU/audio/network workload checks, and physical
+hardware validation are still open. Do not use the installer on a physical
+drive until the release gate in `readiness-report.md` and the live-media plan
+review and backup/recovery gates have been completed.
