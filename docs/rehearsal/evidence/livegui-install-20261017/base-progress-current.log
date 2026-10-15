@@ -1,5 +1,5 @@
-2026-10-15T22:58:30+00:00
- 120557 Sl         22:10
+2026-10-15T23:15:27+00:00
+ 120557 Sl         39:41
 QEMU 6.2.0 monitor - type 'help' for more information
 (qemu) i[K[Din[K[D[Dinf[K[D[D[Dinfo[K[D[D[D[Dinfo [K[D[D[D[D[Dinfo s[K[D[D[D[D[D[Dinfo st[K[D[D[D[D[D[D[Dinfo sta[K[D[D[D[D[D[D[D[Dinfo stat[K[D[D[D[D[D[D[D[D[Dinfo statu[K[D[D[D[D[D[D[D[D[D[Dinfo status[K
 VM status: running
@@ -7,22 +7,22 @@ VM status: running
 (qemu) i[K[Din[K[D[Dinf[K[D[D[Dinfo[K[D[D[D[Dinfo [K[D[D[D[D[Dinfo b[K[D[D[D[D[D[Dinfo bl[K[D[D[D[D[D[D[Dinfo blo[K[D[D[D[D[D[D[D[Dinfo bloc[K[D[D[D[D[D[D[D[D[Dinfo block[K[D[D[D[D[D[D[D[D[D[Dinfo blocks[K[D[D[D[D[D[D[D[D[D[D[Dinfo blockst[K[D[D[D[D[D[D[D[D[D[D[D[Dinfo blocksta[K[D[D[D[D[D[D[D[D[D[D[D[D[Dinfo blockstat[K[D[D[D[D[D[D[D[D[D[D[D[D[D[Dinfo blockstats[K
 pflash0: rd_bytes=0 wr_bytes=0 rd_operations=0 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=0 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=0
 pflash1: rd_bytes=0 wr_bytes=0 rd_operations=0 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=0 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=0
-live: rd_bytes=564775936 wr_bytes=0 rd_operations=6798 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=813857522 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=509346915368
-target: rd_bytes=51841536 wr_bytes=3743372288 rd_operations=4149 wr_operations=62807 flush_operations=491 wr_total_time_ns=179276166601 rd_total_time_ns=219279416 flush_total_time_ns=1269993521 rd_merged=62 wr_merged=16269 idle_time_ns=8821316019
-state: rd_bytes=298316800 wr_bytes=4726784 rd_operations=218 wr_operations=442 flush_operations=264 wr_total_time_ns=74761982 rd_total_time_ns=299487659 flush_total_time_ns=432584703 rd_merged=36 wr_merged=0 idle_time_ns=763536194252
-ide2-cd0: rd_bytes=82 wr_bytes=0 rd_operations=4 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=5239 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=1307155202750
+live: rd_bytes=564808704 wr_bytes=0 rd_operations=6799 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=814005430 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=342983691472
+target: rd_bytes=105925120 wr_bytes=4351210496 rd_operations=6034 wr_operations=81562 flush_operations=769 wr_total_time_ns=206020608603 rd_total_time_ns=381202600 flush_total_time_ns=2043778413 rd_merged=219 wr_merged=21233 idle_time_ns=152472809
+state: rd_bytes=298316800 wr_bytes=4726784 rd_operations=218 wr_operations=442 flush_operations=264 wr_total_time_ns=74761982 rd_total_time_ns=299487659 flush_total_time_ns=432584703 rd_merged=36 wr_merged=0 idle_time_ns=1814508849860
+ide2-cd0: rd_bytes=82 wr_bytes=0 rd_operations=4 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=5239 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=2358127858150
 sd0: rd_bytes=0 wr_bytes=0 rd_operations=0 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=0 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=0
 (qemu) Warning: Permanently added '[127.0.0.1]:2223' (ED25519) to the list of known hosts.
 6682 /usr/bin/python3.14 /usr/lib/python-exec/python3.14/emerge --ask=n --verbose --update --deep --newuse --with-bdeps=y @world
-265116 /usr/bin/python3.14 /usr/lib/python-exec/python3.14/emerge --ask=n --verbose --update --deep --newuse --with-bdeps=y @world
-265122 bash -c pgrep -af emerge; sudo tail -n 5 /mnt/gentoo/var/log/emerge.log; sudo free -h; sudo df -h /mnt/gentoo; cat /mnt/recovery/retry-20261017/gentoo-packages-base.json
-1792105099:  === (66 of 363) Post-Build Cleaning (dev-build/meson-1.12.1::/var/cache/binhost/binhost/dev-build/meson/meson-1.12.1-1.gpkg.tar)
-1792105099:  ::: completed emerge (66 of 363) dev-build/meson-1.12.1 to /
-1792105099:  >>> emerge (67 of 363) app-arch/lz4-1.10.0-r1 to /
-1792105099:  === (67 of 363) Cleaning (app-arch/lz4-1.10.0-r1::/var/db/repos/gentoo/app-arch/lz4/lz4-1.10.0-r1.ebuild)
-1792105099:  === (67 of 363) Compiling/Merging (app-arch/lz4-1.10.0-r1::/var/db/repos/gentoo/app-arch/lz4/lz4-1.10.0-r1.ebuild)
+364594 /usr/bin/python3.14 /usr/lib/python-exec/python3.14/emerge --ask=n --verbose --update --deep --newuse --with-bdeps=y @world
+364646 bash -c pgrep -af emerge; sudo tail -n 5 /mnt/gentoo/var/log/emerge.log; sudo free -h; sudo df -h /mnt/gentoo; cat /mnt/recovery/retry-20261017/gentoo-packages-base.json
+1792106130:  >>> AUTOCLEAN: dev-libs/ell:0
+1792106130:  === (109 of 363) Post-Build Cleaning (dev-libs/ell-0.83::/var/cache/binhost/gentoo/dev-libs/ell/ell-0.83-1.gpkg.tar)
+1792106130:  ::: completed emerge (109 of 363) dev-libs/ell-0.83 to /
+1792106130:  >>> emerge (110 of 363) dev-util/wayland-scanner-1.26.0 to /
+1792106130:  === (110 of 363) Merging Binary (dev-util/wayland-scanner-1.26.0::/var/cache/binhost/gentoo/dev-util/wayland-scanner/wayland-scanner-1.26.0-1.gpkg.tar)
                total        used        free      shared  buff/cache   available
-Mem:            15Gi       2.6Gi       7.2Gi       143Mi       6.3Gi        12Gi
+Mem:            15Gi       2.5Gi       7.0Gi       143Mi       6.5Gi        13Gi
 Swap:             0B          0B          0B
 Filesystem               Size  Used Avail Use% Mounted on
 /dev/mapper/gentoo-root   98G  2.7G   94G   3% /mnt/gentoo
