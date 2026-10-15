@@ -72,6 +72,16 @@ at the disposable VM console if it is known; otherwise recreate the disposable
 target with an operator-known test key and repeat the rehearsal. Run state and
 logs remain in `/var/lib/gentoo-installer-run9` in the builder.
 
+The gaming package set completed after resolving its live keyword and license
+requirements against Gentoo metadata. Its command logs remain under
+`/var/lib/gentoo-installer-run9/logs`; Steam, Proton, and Gamescope runtime
+behavior is untested. The development package set is still compiling
+`llvm-core/lldb-22.1.8` from source. Virtualization and Gentoo `security_backup`
+package sets have not run. A Restic 0.18.1 fixture backup and restore round
+trip passed in the Ubuntu builder; its log and SHA-256 are recorded in
+[`evidence/README.md`](evidence/README.md). This does not validate Gentoo's
+Restic package or the eventual independent backup destination.
+
 ## Not yet proven
 
 This rehearsal completed package provisioning and installer UKI validation,

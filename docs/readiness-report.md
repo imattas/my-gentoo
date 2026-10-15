@@ -13,6 +13,8 @@ Status: **NOT READY FOR PHYSICAL INSTALLATION**
 - Checking Gentoo's current kernel-install guidance against the synced metadata exposed a missing `systemd` USE flag on `sys-kernel/installkernel`; it is now part of the generated configuration and was synchronized into the running target before kernel installation.
 - A wrong LUKS test key was rejected by `cryptsetup open --test-passphrase` without creating a mapping. This was run against the disposable QEMU target.
 - `validate_boot_assets()` returned `gentoo-production.efi`; the ESP contains systemd-boot, the fallback EFI loader, and the validated production UKI. The target's graphical default, NetworkManager service link, SDDM display-manager link, and `rehearsal` wheel account are configured. `visudo --check`, `getent`, `groups`, and `passwd -S` succeeded inside the chroot.
+- The gaming package set completed in QEMU after live metadata checks corrected the Steam overlay's keyword/license requirements and the current Gamescope and libudev atoms. The development package set is still merging from source (currently `llvm-core/lldb-22.1.8`); virtualization and Gentoo backup package sets have not run yet.
+- A Restic 0.18.1 smoke test in the Ubuntu QEMU builder created a tagged snapshot, restored a fixture, and byte-compared it. The reproducible output is in [the evidence log](rehearsal/evidence/restic-smoke.log). This does not validate Gentoo's Restic package or an independent physical backup destination.
 - The LUKS test passphrase was deliberately not saved in repository state or logs. It is not available in the current rehearsal context, so a target-only reboot and first-login test cannot yet be performed.
 - Implemented code covers explicit device identity checks, checkpoint persistence, target chroot mount cleanup, package command logs, and UKI content checks. Unit fixtures exercise these paths; they do not substitute for end-to-end proof.
 
@@ -25,16 +27,16 @@ The detailed run log, commands, disk identities, and evidence paths are in [the 
 | Device discovery and destructive target guard | Implemented; unit tested | Exact identity and plan hash checks exist. Positive and negative discovery scenarios still need disposable Linux integration coverage. |
 | Stage 3 and base repository setup | Exercised in QEMU | Signed Stage 3 and repository snapshot verified; profile selected from actual synced metadata. |
 | Portage base `@world` | Tested in QEMU | Live plan resolved and all 361 packages merged. This does not establish a working boot. |
-| Requested package sets | Partial | Base and desktop package sets completed in QEMU. Gaming, development, virtualization, and backup remain. Steam overlay metadata and its package have not yet been validated in the VM. |
+| Requested package sets | Partial | Base, desktop, and gaming package sets completed in QEMU; gaming metadata and merges were checked against the synced Gentoo tree. Development is actively merging from source. Virtualization and Gentoo backup package sets remain. |
 | Chroot orchestration and checkpoints | Implemented; unit tested | Bind mounts, resolver restoration, package logs, and failure state are implemented. Interrupted installation recovery is not yet fully integrated-tested. |
 | LUKS2 and Btrfs | Storage stage exercised; boot unproven | Disposable target was encrypted, formatted, and mounted with the configured Btrfs subvolumes. Wrong-key rejection is proven. Initramfs unlock and boot-time subvolume mounts are not. |
 | systemd-boot and UKI | Assets validated; boot pending | Installer validation returns `gentoo-production.efi`; the ESP contains the loader, fallback loader, and UKI with `.linux`, `.initrd`, `.cmdline` sections and expected LUKS/Btrfs tokens. Firmware boot and initramfs unlock remain unproven. The test passphrase must be supplied at the rehearsal console or a new disposable target must be installed with a known test passphrase. |
 | KDE Wayland, NetworkManager, PipeWire | Packages installed; runtime untested | Native service links and graphical default are present. No systemd boot, Wayland login, network connection, or audio stream has been observed. |
 | AMDGPU/RADV and 32-bit Vulkan | Packages built; runtime untested | Mesa multilib, Radeon settings, and Vulkan loader are installed. The VM has no RX 7900 XTX passthrough, so hardware rendering and Vulkan workloads remain untested. |
-| Steam/Proton/Gamescope | Unfinished | Overlay setup, package resolution, installation, and game launch are unverified. |
-| Development and virtualization | Configuration only | Package availability/build, host KVM/libvirt, and guest/container operation are unverified. |
+| Steam/Proton/Gamescope | Packages installed; runtime untested | Steam overlay and package resolution/install passed in QEMU. No Steam login, Proton game, Gamescope session, or GPU accelerated workload has run. |
+| Development and virtualization | Partial | Development package merge is running; virtualization package metadata includes `virt-manager`. No full merge or runtime KVM/libvirt/container guest test yet. |
 | Production/experimental kernels | Partial | Separate package intent and production UKI guard exist. Kernel update rollback and a failed-update recovery have not been demonstrated. |
-| Backup and restore | Unfinished | Restic is listed, but no backup policy or restore rehearsal exists. |
+| Backup and restore | Partially tested | A Restic builder-VM fixture round trip passed and is logged. Gentoo's `app-backup/restic` merge, actual system backup, independent destination, and full recovery-media restore remain. |
 | Failure-injection matrix and diagnostics | Partial | Unit tests cover selected state and image failures. QEMU evidence includes wrong-key rejection, stale atoms, keyword/license/USE failures, a kernel post-install failure, and the systemd SysV-hook failure; reviewed recovery logs and all desktop attempts are archived. Interrupted installation, corrupt state, wrong identity, invalid boot image, unavailable package, backup restore, and failed-kernel rollback still need the full disposable integration matrix. |
 
 ## Remaining hardware-dependent checks
@@ -44,7 +46,7 @@ The detailed run log, commands, disk identities, and evidence paths are in [the 
 - Supply the rehearsal LUKS passphrase at the target console or rebuild the disposable target with a known test passphrase; no encrypted-root reboot or configured-user login has been observed.
 - Radeon RX 7900 XTX firmware, amdgpu, Mesa RADV, KDE Wayland output, and 64-bit/32-bit Vulkan workloads.
 - Real Ethernet/Wi-Fi, DNS, firewall, audio devices, PipeWire, suspend/resume, and multi-monitor behavior.
-- Steam/Proton and Gamescope workload on the actual GPU.
+- Steam/Proton and Gamescope workload on the actual GPU (package installation passed in QEMU, runtime did not).
 - Physical-host virtualization extensions and KVM/libvirt guest boot.
 - Independent backup destination, Restic restore, and rescue-media file recovery.
 
