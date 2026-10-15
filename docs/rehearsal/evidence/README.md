@@ -3,6 +3,61 @@
 These files come from builder state `/var/lib/gentoo-installer-run9`. The
 builder and target are QEMU qcow2 disks; no physical drives were attached.
 
+## Gentoo LiveGUI USB boot and read-only preflight
+
+The official Gentoo `current-livegui-amd64` image booted under OVMF in a QEMU
+`q35` machine when attached as a USB mass-storage device. The first optical
+attachment attempt fell through to PXE; the USB attachment booted the same
+verified image successfully. KDE started, the `gentoo` live user had working
+noninteractive sudo, and user-mode networking obtained DHCP and reached an
+external IP. The image was cloned from Gentoo's
+[current LiveGUI release directory](https://distfiles.gentoo.org/releases/amd64/autobuilds/current-livegui-amd64/).
+The signed pointer, detached signature, and signed SHA512 digest were verified
+with the Gentoo release key (primary fingerprint
+`13EBBDBEDE7A12775DFDB1BABB572E0E2D182910`); the ISO SHA512 was
+`8fe06638bfbcb43526477762fe57862fda85ed7a93f87795c13ea7e4aa14c20e1638477f71d4bd4071315c358a72e6a12916d8d0f55d9878ca4a4864d0e5573a`.
+
+A blank 100 GiB qcow2 (`livegui-target.qcow2`, outside this repository) was
+attached as virtio storage, with the LiveGUI ISO attached over USB. From the
+live desktop, the repository was cloned and `sudo bash scripts/usb-start.sh`
+was run. Its read-only discovery reported `/dev/vda`,
+`/dev/disk/by-id/virtio-GQ-LIVEGUI-261015`, serial `GQ-LIVEGUI-261015`,
+transport `virtio`, 100 GiB, and no model. The configured exact Samsung
+identity guard returned `target.status=blocked`, `match_count=0`, and
+`read_only=true`. No plan was authorized and no storage write command ran.
+The attached qcow2 remained 196 KiB and `qemu-img check` reported no errors.
+
+The sanitized captured preflight report is
+`livegui-preflight-report.json` (SHA-256
+`FB3546348038E0EA2F411D7B7B5598F28519BAF0C4EDE22A2473D302F157081D`); the
+screen capture is `livegui-preflight-screen.png` (SHA-256
+`18E7037458096714072B88CB34CBE334B804372E2FE3383FDCD8F0110153C469`). The
+report captures UEFI mode, VM device inventory, networking, and the blocked
+target result. This rehearsal proves LiveGUI boot and read-only launcher
+behavior only. It does not validate destructive installation or an installed
+system booted from the LiveGUI workflow.
+
+Reproduce with the verified ISO and a newly created blank disposable disk:
+
+```sh
+qemu-img create -f qcow2 livegui-target.qcow2 100G
+qemu-system-x86_64 \
+  -machine q35,accel=kvm -cpu host -smp 2 -m 4G \
+  -drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE_4M.fd \
+  -drive if=pflash,format=raw,file=OVMF_VARS_4M.fd \
+  -device qemu-xhci,id=xhci \
+  -drive if=none,id=live,format=raw,readonly=on,file=livegui-amd64.iso \
+  -device usb-storage,bus=xhci.0,drive=live \
+  -device pcie-root-port,id=target-port,chassis=1 \
+  -drive if=none,id=target,format=qcow2,file=livegui-target.qcow2 \
+  -device virtio-blk-pci,bus=target-port,drive=target,serial=GQ-LIVEGUI-261015 \
+  -netdev user,id=net0 \
+  -device e1000,netdev=net0
+```
+
+Use the newly downloaded ISO's verified path and a fresh OVMF variable store.
+The exact release ISO used here was `livegui-amd64-20260913T163055Z.iso`.
+
 ## Experimental source kernel build and encrypted boot
 
 `experimental-kernel-source-build.log.gz` is the full 102 MiB Portage output

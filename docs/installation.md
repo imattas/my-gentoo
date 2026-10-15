@@ -197,6 +197,9 @@ production UKI or systemd-boot default. After it completes, inspect
 `/efi/EFI/Linux/` and pass its generated source-kernel UKI to
 `kernel-stage-experimental`; that command copies it to the isolated
 experimental entry. Choose that entry manually from systemd-boot to test it.
-The merge and UKI staging are automated; booting the experimental kernel,
-rollback after its failure, and Secure Boot signing remain unverified. Physical
-reboot and first actual unlock/boot remain operator-controlled.
+The source-built 7.2.10 experimental kernel has been staged and booted in the
+disposable OVMF rehearsal: it unlocked LUKS2, mounted the configured Btrfs
+subvolumes, reached systemd `running`, and accepted login. Running the rollback
+CLI inside Gentoo after a failed kernel update, Secure Boot signing, and
+recovery-media restore remain unverified. Physical reboot and first actual
+unlock/boot remain operator-controlled.

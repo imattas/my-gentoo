@@ -44,3 +44,12 @@ after adding systemd's `cryptsetup` USE flag. See the rehearsal record for the
 boot and first-login evidence and for remaining unverified release gates.
 The cloud seed and ephemeral SSH private key remain outside the repository in
 the WSL rehearsal directory. Do not reuse the ephemeral key.
+
+## Official Gentoo LiveGUI USB rehearsal
+
+On 2026-10-15, the signed current Gentoo LiveGUI image booted under OVMF as a
+USB mass-storage device, reached KDE, and ran the repository's read-only
+`scripts/usb-start.sh` inspection. A blank 100 GiB qcow2 target was attached at
+VM startup. The inspector found its virtio by-id but blocked it because its
+model and serial did not match the configured Samsung target; no storage write
+was authorized or run. See the [LiveGUI evidence](evidence/README.md#gentoo-livegui-usb-boot-and-read-only-preflight).

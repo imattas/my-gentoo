@@ -2,8 +2,11 @@
 
 See [readiness-report.md](readiness-report.md) for the current feature-by-feature
 status and the production release gate. Encrypted UEFI boot and first-login
-proof passed in a disposable QEMU VM; a full live-media-to-first-boot installer
-rehearsal remains unfinished. Unit-test success is not install or boot evidence.
+proof passed in a disposable QEMU VM. Gentoo LiveGUI also booted through UEFI
+from USB emulation and its read-only launcher inspection refused a disposable
+QEMU disk with the wrong identity. A complete live-media install through the
+encrypted first boot remains unfinished. Unit-test success is not install or
+boot evidence.
 
 The Windows development checkout can validate renderers and mocked state
 transitions. It cannot prove the Linux live-media path, physical storage,
@@ -69,9 +72,10 @@ passed. Reproduce kernel recovery coverage with
 `python -m unittest discover -s tests/integration -v`; reproduce the LUKS check
 with `bash scripts/integration/luks-negative-unlock.sh` as root on Linux.
 Backup restore from recovery media, an actual QEMU boot after kernel rollback,
-remaining failure-injection executions, Wayland/GPU/audio/network workload
-checks, experimental kernel provisioning, and physical hardware validation are
-still open. The follow-up menu boots stopped at LUKS because the disposable
+remaining failure-injection executions, Wayland/GPU/audio workload checks,
+rollback from within booted Gentoo, and physical hardware validation are still
+open. The experimental kernel source package and encrypted boot have passed in
+QEMU. The follow-up menu boots stopped at LUKS because the disposable
 test key was removed; the earlier successful production UKI boot provides
 unlock/login validation. Do not use the installer on a physical drive until the release gate
 in `readiness-report.md` and the live-media plan review and backup/recovery gates

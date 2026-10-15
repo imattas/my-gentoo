@@ -103,9 +103,17 @@ proved wrong-key rejection and correct-key unlock, then removed its loop image.
 Reproduce with `python -m unittest discover -s tests/integration -v` and
 `bash scripts/integration/luks-negative-unlock.sh` (Linux root).
 
-No QEMU reboot after a forced bad kernel update and rollback has been performed.
-The custom experimental kernel build is unfinished. KDE Wayland, real
-networking, audio, AMDGPU/RADV, 32-bit Vulkan, Steam/Proton, libvirt-managed
-guests, container workloads, full system restore from recovery media, and
-several installer failure-injection executions remain unverified. Do not treat
-this report as authorization to install on a physical drive.
+The source-built `sys-kernel/gentoo-kernel-7.2.10` experimental UKI has since
+booted under OVMF, unlocked the rehearsal LUKS2 root, mounted all configured
+Btrfs subvolumes, reached systemd `running`, and accepted SSH login. Its build,
+initramfs repair, and boot are documented in
+[`evidence/README.md`](evidence/README.md) and
+[`evidence/gentoo-experimental-first-boot-verification.log`](evidence/gentoo-experimental-first-boot-verification.log).
+A separate overlay rehearsal restored a known-good UKI after simulating a
+failed production image and booted it to the encrypted-root prompt. The
+`kernel-rollback` CLI has not yet run inside the booted Gentoo system followed
+by a reboot; full installation from Gentoo LiveGUI and booted recovery-media
+restore also remain unverified. KDE Wayland, real networking, audio,
+AMDGPU/RADV, 32-bit Vulkan, Steam/Proton, libvirt-managed guests, and container
+workloads remain unverified at runtime. This rehearsal is not authorization to
+install on a physical drive.
