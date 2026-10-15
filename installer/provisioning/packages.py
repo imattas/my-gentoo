@@ -11,7 +11,7 @@ import struct
 import subprocess
 import sys
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Callable
 
 from installer.planning.storage import plan_hash_matches
 from installer.stages.stage3 import verify_root_mapping
@@ -39,7 +39,15 @@ def render_emerge_commands(
         commands.append(
             prefix + confirmation + ["--verbose", "--update", "--deep", "--newuse", "--with-bdeps=y", "@world"]
         )
-    commands.append(prefix + confirmation + ["--verbose", *sets[package_set]])
+        support_packages = [
+            atom for atom in sets[package_set] if atom != "sys-kernel/gentoo-kernel-bin"
+        ]
+        commands.append(prefix + confirmation + ["--verbose", *support_packages])
+        commands.append(
+            prefix + confirmation + ["--verbose", "sys-kernel/gentoo-kernel-bin"]
+        )
+    else:
+        commands.append(prefix + confirmation + ["--verbose", *sets[package_set]])
     if package_set == "base":
         commands.append(
             ["chroot", target_root, "visudo", "--check", "--file", "/etc/sudoers"]
@@ -110,8 +118,9 @@ def recover_failed_package_checkpoint(
     storage_plan_sha256: str,
     *,
     non_interactive: bool = False,
+    kernel_repair: Callable[[], str] | None = None,
 ) -> dict[str, Any]:
-    """Reopen a package checkpoint only after a verified pre-merge resolution failure."""
+    """Reopen a package checkpoint after a hash-reviewed safe failure and repair."""
     if package_set not in PACKAGE_SETS:
         raise ValueError(f"unknown package set: {package_set}")
     state_dir = state_dir.resolve(strict=True)
@@ -162,14 +171,24 @@ def recover_failed_package_checkpoint(
         '!!! All ebuilds that could satisfy "' in log_text
         and "masked packages is required to complete your request" in log_text
     )
+    kernel_postinst = (
+        "ERROR: sys-kernel/gentoo-kernel-bin-" in log_text
+        and "failed (postinst phase)" in log_text
+        and "Module 'btrfs' cannot be installed" in log_text
+        and "emerge --config '=sys-kernel/gentoo-kernel-bin-" in log_text
+    )
     if (
+        kernel_postinst
+        and kernel_repair is None
+    ):
+        raise RuntimeError("known kernel post-install failure requires the explicit repair path")
+    if not kernel_postinst and (
         not (unavailable_atom or masked_atom)
         or ">>> emerge (" in log_text
         or "Compiling/Merging (" in log_text
         or "Merging Binary (" in log_text
     ):
-        raise RuntimeError("failed log does not prove a pre-merge unavailable-atom resolution failure")
-
+        raise RuntimeError("failed log does not prove a safe package resolution or kernel post-install failure")
     commands = render_emerge_commands(
         package_config, package_set, non_interactive=non_interactive
     )
@@ -182,6 +201,23 @@ def recover_failed_package_checkpoint(
         ]
         if not starts or starts[-1].get("argv") != commands[completed_index]:
             raise RuntimeError("a completed package command changed; checkpoint recovery is unsafe")
+
+    if kernel_postinst:
+        repair_log = kernel_repair()
+        repair_path = state_dir / "logs" / f"package-recovery-kernel-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}.log"
+        repair_path.write_text(repair_log, encoding="utf-8")
+        _append_event(
+            event_path,
+            {
+                "time": datetime.now(timezone.utc).isoformat(),
+                "event": "package-kernel-postinst-repaired",
+                "package_set": package_set,
+                "index": command_index,
+                "failed_log_sha256": log_sha256,
+                "repair_log": str(repair_path),
+                "repair_log_sha256": hashlib.sha256(repair_log.encode()).hexdigest(),
+            },
+        )
 
     previous_digest = journal.get("command_sha256")
     new_digest = hashlib.sha256(

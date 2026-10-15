@@ -30,8 +30,9 @@ The OVMF/QEMU disposable Ubuntu builder completed the 361 package Gentoo base
 world merge. The subsequent base utility set is being installed against the
 same disposable encrypted qcow2 target. Package resolution failures and
 checkpoint recovery evidence are in
-`rehearsal/gentoo-install-2026-10-14.md`. Target UKI generation, reboot,
-encrypted unlock, first login, desktop services, and recovery scenarios remain
-unverified. Do not use the installer on a physical drive until the release gate
+`rehearsal/gentoo-install-2026-10-14.md`. A project UKI has been generated and
+its PE sections and encrypted-root command line inspected. Installer UKI
+validation, systemd-boot reboot, encrypted unlock, first login, desktop
+services, and recovery scenarios remain unverified. Do not use the installer on a physical drive until the release gate
 in `readiness-report.md` and the live-media plan review and backup/recovery
 gates have been completed.

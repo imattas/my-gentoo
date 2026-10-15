@@ -40,3 +40,21 @@ sudo python3 -m installer.cli --config /tmp/qemu-workstation.json recover-packag
 
 This log proves resolution stopped before any merge marker. It does not prove
 the subsequent package set or boot has completed; see the main rehearsal record.
+
+## Kernel initramfs hook failure
+
+`base-kernel-dracut-failure.log` preserves the first kernel install failure.
+The kernel's Btrfs filesystem support was built in, but dracut also needed
+`btrfs-progs` userspace tools; Portage reached the kernel before installing
+that package because both were in one unordered emerge request. The failed log
+SHA-256 is
+`70c5a73d324fe036d875a07087c08df58502138d58ec696b05fd8278f5b14693`.
+The full 9.1 MiB log is retained as `base-kernel-dracut-failure.log`.
+
+The base stage now installs Btrfs, cryptsetup, and dracut before a separate
+kernel command. Hash gated recovery installed `btrfs-progs`, ran the installed
+kernel's `emerge --config`, and reopened the package checkpoint. That generated
+a 138 MiB EFI UKI. `objdump -h` showed nonempty `.linux`, `.initrd`, and
+`.cmdline` sections; `objdump -s -j .cmdline` showed the expected LUKS UUID,
+root mapper, Btrfs `@` subvolume, and `rw`. This is UKI construction evidence;
+it is not proof that systemd-boot can load or boot it.

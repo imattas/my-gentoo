@@ -32,7 +32,7 @@ The passphrase is not included in this report, state, or logs.
 - A deliberate wrong LUKS test key was rejected by
   `cryptsetup open --test-passphrase`; this read-only test did not create a
   mapping or alter the header.
-- Local unit suite after current installer fixes: `python -m pytest -q tests/unit` — 47 passed, 6 subtests.
+- Local unit suite after current installer fixes: `python -m pytest -q tests/unit` — 48 passed, 6 subtests.
   `python -m compileall -q installer tests` and `git diff --check` passed.
 
 ## Active work and logs
@@ -45,13 +45,24 @@ and redistributable license. Those observations are preserved in
 The config now uses `sys-kernel/linux-firmware`, with package specific `~amd64`
 and `linux-fw-redistributable` acceptance. A bounded recovery command verifies
 the failed log hash and exact storage/base checkpoint hashes before reopening
-a command. The resumed base package merge is currently running; its result is
-pending. Run state remains in the builder at `/var/lib/gentoo-installer-run9`.
+a command. The base merge then exposed a kernel hook order failure: dracut's
+Btrfs module also needs `btrfs-progs` userspace tools. The first saved kernel
+failure log is in [`evidence/base-kernel-dracut-failure.log`](evidence/base-kernel-dracut-failure.log).
+The installer now separates base tools from the kernel command. Hash reviewed
+recovery installed `btrfs-progs` and successfully ran
+`emerge --config =sys-kernel/gentoo-kernel-bin-6.18.54`; its output is in the
+builder's `logs/package-recovery-kernel-20261015T015334Z.log`. That generated
+the first UKI at
+`/mnt/gentoo/efi/EFI/Linux/b9e356061f78ffd6207d6a6f6ad01cea-6.18.54-gentoo-dist-bin.efi`.
+`objdump` confirmed nonempty Linux, initrd, and command-line PE sections. The
+base prerequisite command is being resumed; systemd-boot validation and VM boot
+are pending. Run state remains in the builder at
+`/var/lib/gentoo-installer-run9`.
 
 ## Not yet proven
 
-This rehearsal has not yet completed the base package install, produced and
-validated the project's UKI, rebooted from systemd-boot, unlocked LUKS from the
+This rehearsal has not yet completed the base package install, passed the
+installer's UKI validation, rebooted from systemd-boot, unlocked LUKS from the
 initramfs, mounted Btrfs during target boot, reached systemd, or logged in as
 the configured user. KDE, audio, AMDGPU/RADV, 32-bit Vulkan, Steam, development,
 virtualization, backup restore, kernel rollback, and the failure-injection

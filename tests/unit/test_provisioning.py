@@ -162,6 +162,9 @@ Available profile symlink targets:
 
         self.assertTrue(all(isinstance(command, list) for command in base + desktop + gaming))
         self.assertTrue(any("@world" in command for command in base))
+        self.assertNotIn("sys-kernel/gentoo-kernel-bin", base[1])
+        self.assertIn("sys-kernel/gentoo-kernel-bin", base[2])
+        self.assertLess(base.index(next(command for command in base if "sys-fs/btrfs-progs" in command)), 2)
         self.assertFalse(any("@world" in command for command in desktop))
         self.assertIn("kde-plasma/plasma-meta", desktop[0])
         self.assertEqual(gaming[1][-2:], ["enable", "steam-overlay"])

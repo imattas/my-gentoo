@@ -62,6 +62,30 @@ class FailedPackageCheckpointRecoveryTests(unittest.TestCase):
             )
             self.assertEqual(result["status"], "ready-to-resume")
 
+    def test_kernel_postinst_recovery_requires_and_records_explicit_repair(self):
+        failed = (
+            "ERROR: sys-kernel/gentoo-kernel-bin-6.18.54 failed (postinst phase):\n"
+            "dracut: Module 'btrfs' cannot be installed.\n"
+            "Run emerge --config '=sys-kernel/gentoo-kernel-bin-6.18.54'\n"
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            state, package_config, log = self._fixture(Path(temporary), failed)
+            digest = hashlib.sha256(log.read_bytes()).hexdigest()
+            with self.assertRaisesRegex(RuntimeError, "explicit repair path"):
+                recover_failed_package_checkpoint(
+                    "base", package_config, state, 1, digest, "plan-hash", non_interactive=True
+                )
+            result = recover_failed_package_checkpoint(
+                "base", package_config, state, 1, digest, "plan-hash",
+                non_interactive=True, kernel_repair=lambda: "btrfs-progs installed; kernel config succeeded\n",
+            )
+            self.assertEqual(result["status"], "ready-to-resume")
+            events = [
+                json.loads(line)
+                for line in (state / "gentoo-package-events.jsonl").read_text().splitlines()
+            ]
+            self.assertTrue(any(event["event"] == "package-kernel-postinst-repaired" for event in events))
+
     def test_refuses_recovery_for_a_different_storage_plan(self):
         with tempfile.TemporaryDirectory() as temporary:
             state, package_config, log = self._fixture(

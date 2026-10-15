@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 import json
 from pathlib import Path
 import subprocess
@@ -118,6 +119,11 @@ def main(argv: list[str] | None = None) -> int:
     recover_parser.add_argument("--command-index", required=True, type=int)
     recover_parser.add_argument("--confirm-log-sha256", required=True)
     recover_parser.add_argument("--non-interactive", action="store_true")
+    recover_parser.add_argument(
+        "--repair-known-kernel-postinst",
+        action="store_true",
+        help="repair only the recognized dracut Btrfs post-install failure before reopening its package checkpoint",
+    )
     args = parser.parse_args(argv)
 
     if args.command == "inspect":
@@ -196,6 +202,60 @@ def main(argv: list[str] | None = None) -> int:
                     storage_plan["target"]["by_id"],
                     (expected["serial"], config["storage"]["data_disk"]["serial"]),
                 )
+                kernel_repair = None
+                if args.repair_known_kernel_postinst:
+                    if args.package_set != "base" or args.command_index != 1:
+                        raise ValueError("kernel post-install recovery is limited to base package command 1")
+
+                    def repair_kernel_postinst() -> str:
+                        target_root = Path("/mnt/gentoo")
+                        verify_root_mapping(storage_plan["target"]["by_id"])
+                        installed = sorted(
+                            path.name
+                            for path in (target_root / "var/db/pkg/sys-kernel").glob(
+                                "gentoo-kernel-bin-*"
+                            )
+                            if path.is_dir()
+                        )
+                        if len(installed) != 1 or not installed[0].startswith("gentoo-kernel-bin-"):
+                            raise RuntimeError("expected exactly one installed binary kernel to repair")
+                        kernel_atom = "=sys-kernel/gentoo-kernel-bin-" + installed[0].removeprefix(
+                            "gentoo-kernel-bin-"
+                        )
+                        repair_commands = [
+                            [
+                                "chroot", str(target_root), "emerge", "--ask=n", "--verbose",
+                                "sys-fs/btrfs-progs",
+                            ],
+                            [
+                                "chroot", str(target_root), "emerge", "--config", kernel_atom,
+                            ],
+                        ]
+                        outputs = []
+                        repair_path = state_dir / "logs" / (
+                            "package-recovery-kernel-"
+                            + datetime.now().strftime("%Y%m%dT%H%M%S")
+                            + ".log"
+                        )
+                        try:
+                            with mounted_chroot():
+                                for command in repair_commands:
+                                    result = subprocess.run(
+                                        command, check=False, capture_output=True, text=True
+                                    )
+                                    outputs.append(
+                                        "$ " + " ".join(command) + "\n"
+                                        + (result.stdout or "") + (result.stderr or "")
+                                        + f"\n[exit {result.returncode}]\n"
+                                    )
+                                    if result.returncode:
+                                        raise RuntimeError("kernel repair command failed")
+                        except (OSError, RuntimeError) as exc:
+                            repair_path.write_text("".join(outputs), encoding="utf-8")
+                            raise RuntimeError(f"inspect kernel recovery log {repair_path}") from exc
+                        return "".join(outputs)
+
+                    kernel_repair = repair_kernel_postinst
                 result = recover_failed_package_checkpoint(
                     args.package_set,
                     package_config,
@@ -204,6 +264,7 @@ def main(argv: list[str] | None = None) -> int:
                     args.confirm_log_sha256,
                     storage_plan["sha256"],
                     non_interactive=args.non_interactive,
+                    kernel_repair=kernel_repair,
                 )
                 print(json.dumps(result, indent=2))
                 return 0
