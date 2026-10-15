@@ -1,6 +1,6 @@
 {
   "production_package": "sys-kernel/gentoo-kernel-bin",
-  "experimental_package": "sys-kernel/gentoo-sources",
+  "experimental_package": "sys-kernel/gentoo-kernel",
   "initramfs_generator": "dracut",
   "uki_generator": "ukify",
   "uki": true,

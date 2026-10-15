@@ -188,8 +188,14 @@ python3 -m installer.cli kernel-rollback --root /
 ```
 
 The rollback command validates the fallback UKI and embedded root command line
-before atomically replacing the production image. A separate
-`kernel-stage-experimental` command validates and stages an externally built
-UKI under its own entry while preserving the production default. The automated
-Gentoo source-kernel build and Secure Boot signing remain unfinished. The
-physical reboot and first actual unlock/boot remain operator-controlled.
+before atomically replacing the production image. The checkpointed
+`experimental_kernel` package set builds Gentoo's `sys-kernel/gentoo-kernel`
+source distribution kernel alongside the production `gentoo-kernel-bin`
+package. It depends on the completed base stage and does not rewrite the
+production UKI or systemd-boot default. After it completes, inspect
+`/efi/EFI/Linux/` and pass its generated source-kernel UKI to
+`kernel-stage-experimental`; that command copies it to the isolated
+experimental entry. Choose that entry manually from systemd-boot to test it.
+The merge and UKI staging are automated; booting the experimental kernel,
+rollback after its failure, and Secure Boot signing remain unverified. Physical
+reboot and first actual unlock/boot remain operator-controlled.

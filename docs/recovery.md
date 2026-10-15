@@ -54,17 +54,27 @@ against temporary EFI fixtures and on a real disposable LUKS/Btrfs/VFAT loop
 target. The loop rehearsal replaced a deliberately invalid production UKI and
 refused a mismatched disk serial without writing. The command has not been run
 inside the booted Gentoo VM, and a QEMU boot after the CLI rollback remains
-unverified. The custom experimental kernel build and signing flow are not
-implemented yet. The generated entries use systemd-boot's documented `efi`
+unverified. The checkpointed `experimental_kernel` package set builds
+`sys-kernel/gentoo-kernel` after the base stage. Its UKI must be inspected and
+explicitly supplied to the staging command below. Experimental boot, failure
+rollback, and signing remain unverified. The generated entries use systemd-boot's documented `efi`
 entry directive and loader timeout format
 ([upstream boot manager documentation](https://systemd.io/BOOT/)).
 
 ## Stage an experimental UKI
 
-Build the experimental kernel and UKI separately; the automated Gentoo source
-kernel build is not implemented yet. Once that workflow produces a UKI with
-the configured encrypted-root command line, stage it from the repository
-checkout while the target root and ESP are mounted:
+First install the source-kernel package set while the target root and ESP are
+mounted:
+
+```bash
+python3 -m installer.cli --config config/workstation.yaml install packages \
+  --set experimental_kernel \
+  --storage-plan /mnt/recovery/gentoo-storage-plan.json \
+  --state-dir /mnt/recovery
+```
+
+Inspect `/efi/EFI/Linux/` for the source kernel's generated UKI. Supply that
+file to the staging command from the repository checkout:
 
 ```bash
 python3 -m installer.cli --config config/workstation.yaml \
@@ -77,9 +87,8 @@ system-disk serial, EFI/UKI structure, and embedded root command line. It writes
 `/efi/EFI/Linux/gentoo-experimental.efi` and a separate
 `gentoo-experimental.conf` menu entry. The existing production and fallback
 images, entries, and production default are preserved. Experimental images are
-excluded from automatic production promotion. The candidate must be built by
-an independently reviewed process until source compilation and its recovery
-flow are implemented and tested.
+excluded from automatic production promotion. The candidate should be the
+source package's versioned UKI, not the active production image.
 
 ## Restic backup and restore check
 

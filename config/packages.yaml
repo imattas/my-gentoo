@@ -17,7 +17,8 @@
     ["gui-wm/gamescope", "~amd64"],
     ["sys-libs/libudev-compat", "~amd64"],
     ["games-util/game-device-udev-rules", "~amd64"],
-    ["sys-firmware/edk2-bin", "~amd64"]
+    ["sys-firmware/edk2-bin", "~amd64"],
+    ["sys-kernel/gentoo-kernel", "~amd64"]
   ],
   "package_license": [
     ["sys-kernel/linux-firmware", "linux-fw-redistributable"],
@@ -84,6 +85,9 @@
     "security_backup": [
       "app-backup/restic",
       "net-firewall/nftables"
+    ],
+    "experimental_kernel": [
+      "sys-kernel/gentoo-kernel"
     ]
   }
 }

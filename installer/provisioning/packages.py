@@ -19,7 +19,10 @@ from installer.stages.stage3 import verify_root_mapping
 from installer.stages.storage import _append_event, _atomic_json, ensure_state_location_off_target
 
 
-PACKAGE_SETS = ("base", "desktop", "gaming", "development", "virtualization", "security_backup")
+PACKAGE_SETS = (
+    "base", "desktop", "gaming", "development", "virtualization",
+    "security_backup", "experimental_kernel",
+)
 
 def render_emerge_commands(
     config: dict[str, Any],
@@ -582,6 +585,7 @@ def run_package_stage(
         "development": ("desktop",),
         "virtualization": ("desktop",),
         "security_backup": ("desktop",),
+        "experimental_kernel": ("base",),
     }
     for required_set in dependencies[package_set]:
         completed = json.loads(
