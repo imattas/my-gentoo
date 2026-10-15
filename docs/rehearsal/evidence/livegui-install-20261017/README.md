@@ -17,8 +17,8 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - The Gentoo repository snapshot signature verified. Configuration completed
   with profile `default/linux/amd64/23.0/desktop/plasma/systemd`.
 - The base `@world` set resolved 363 packages and was still running at the
-  latest capture. Gentoo's emerge log showed package 27/363 in progress at
-  22:46 UTC. The checkpoint correctly remains incomplete until the command
+  latest capture. Gentoo's emerge log showed package 67/363 in progress at
+  22:58 UTC. The checkpoint correctly remains incomplete until the command
   exits successfully.
 
 ## Evidence files
