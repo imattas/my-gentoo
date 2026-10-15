@@ -130,11 +130,16 @@ Available profile symlink targets:
         self.assertIn("sys-libs/ncurses -gpm", files["etc/portage/package.use/gentoo-workstation"])
         self.assertEqual(
             files["etc/portage/package.accept_keywords/gentoo-workstation"],
-            "sys-kernel/linux-firmware ~amd64\n",
+            "sys-kernel/linux-firmware ~amd64\n"
+            "games-util/steam-launcher::steam-overlay ~amd64\n"
+            "gui-wm/gamescope ~amd64\n"
+            "sys-libs/libudev-compat ~amd64\n"
+            "games-util/game-device-udev-rules ~amd64\n",
         )
         self.assertEqual(
             files["etc/portage/package.license/gentoo-workstation"],
-            "sys-kernel/linux-firmware linux-fw-redistributable\n",
+            "sys-kernel/linux-firmware linux-fw-redistributable\n"
+            "games-util/steam-launcher::steam-overlay ValveSteamLicense\n",
         )
         self.assertIn(
             "sys-kernel/installkernel systemd dracut systemd-boot ukify uki",
@@ -159,6 +164,7 @@ Available profile symlink targets:
         base = render_emerge_commands(packages, "base", "/mnt/gentoo")
         desktop = render_emerge_commands(packages, "desktop", "/mnt/gentoo")
         gaming = render_emerge_commands(packages, "gaming", "/mnt/gentoo")
+        development = render_emerge_commands(packages, "development", "/mnt/gentoo")
 
         self.assertTrue(all(isinstance(command, list) for command in base + desktop + gaming))
         self.assertTrue(any("@world" in command for command in base))
@@ -173,6 +179,8 @@ Available profile symlink targets:
         self.assertEqual(desktop[3][0:3], ["ln", "-sfn", "/usr/lib/systemd/system/sddm.service"])
         self.assertIn("display-manager.service", desktop[3][-1])
         self.assertEqual(desktop[4][-2:], ["set-default", "graphical.target"])
+        self.assertIn("dev-debug/gdb", development[0])
+        self.assertNotIn("sys-devel/gdb", development[0])
         self.assertFalse(any("enable" in command for command in desktop))
         self.assertEqual(gaming[1][-2:], ["enable", "steam-overlay"])
         self.assertEqual(gaming[2][-3:], ["sync", "-r", "steam-overlay"])

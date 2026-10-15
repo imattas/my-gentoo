@@ -10,8 +10,17 @@
     ["sys-kernel/installkernel", "systemd", "dracut", "systemd-boot", "ukify", "uki"],
     ["x11-libs/libdrm", "video_cards_radeon"]
   ],
-  "package_accept_keywords": [["sys-kernel/linux-firmware", "~amd64"]],
-  "package_license": [["sys-kernel/linux-firmware", "linux-fw-redistributable"]],
+  "package_accept_keywords": [
+    ["sys-kernel/linux-firmware", "~amd64"],
+    ["games-util/steam-launcher::steam-overlay", "~amd64"],
+    ["gui-wm/gamescope", "~amd64"],
+    ["sys-libs/libudev-compat", "~amd64"],
+    ["games-util/game-device-udev-rules", "~amd64"]
+  ],
+  "package_license": [
+    ["sys-kernel/linux-firmware", "linux-fw-redistributable"],
+    ["games-util/steam-launcher::steam-overlay", "ValveSteamLicense"]
+  ],
   "sets": {
     "base": [
       "app-admin/sudo",
@@ -58,7 +67,7 @@
       "llvm-core/lldb",
       "dev-util/bpftool",
       "sys-devel/gcc",
-      "sys-devel/gdb",
+      "dev-debug/gdb",
       "sys-devel/binutils",
       "dev-util/perf"
     ],
