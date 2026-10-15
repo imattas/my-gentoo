@@ -1,0 +1,9 @@
+{
+  "command_sha256": "7f537e666125999d76d7842a1a28989900604508b2df8014f9dcc786d8ece1ad",
+  "complete": false,
+  "completed": [],
+  "package_set": "desktop",
+  "schema_version": 1,
+  "started": 0,
+  "storage_plan_sha256": "550f7b00c21db1ab6f770b169e9bcf6ace27476ae78a112f89283e4747afdcc2"
+}

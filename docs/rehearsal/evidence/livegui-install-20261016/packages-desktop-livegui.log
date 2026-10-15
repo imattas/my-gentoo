@@ -1,0 +1,1 @@
+Running: chroot /mnt/gentoo emerge --ask=n --verbose kde-plasma/plasma-meta x11-misc/sddm media-video/pipewire media-video/wireplumber media-sound/alsa-utils media-libs/mesa media-libs/vulkan-loader gnome-extra/nm-applet sys-apps/zram-generator

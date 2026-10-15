@@ -1,0 +1,20 @@
+2026-10-15T18:34:14-04:00
+ 112349 Sl      06:44:49
+QEMU 6.2.0 monitor - type 'help' for more information
+(qemu) i[K[Din[K[D[Dinf[K[D[D[Dinfo[K[D[D[D[Dinfo [K[D[D[D[D[Dinfo s[K[D[D[D[D[D[Dinfo st[K[D[D[D[D[D[D[Dinfo sta[K[D[D[D[D[D[D[D[Dinfo stat[K[D[D[D[D[D[D[D[D[Dinfo statu[K[D[D[D[D[D[D[D[D[D[Dinfo status[K
+VM status: running
+(qemu) QEMU 6.2.0 monitor - type 'help' for more information
+(qemu) i[K[Din[K[D[Dinf[K[D[D[Dinfo[K[D[D[D[Dinfo [K[D[D[D[D[Dinfo b[K[D[D[D[D[D[Dinfo bl[K[D[D[D[D[D[D[Dinfo blo[K[D[D[D[D[D[D[D[Dinfo bloc[K[D[D[D[D[D[D[D[D[Dinfo block[K[D[D[D[D[D[D[D[D[D[Dinfo blocks[K[D[D[D[D[D[D[D[D[D[D[Dinfo blockst[K[D[D[D[D[D[D[D[D[D[D[D[Dinfo blocksta[K[D[D[D[D[D[D[D[D[D[D[D[D[Dinfo blockstat[K[D[D[D[D[D[D[D[D[D[D[D[D[D[Dinfo blockstats[K
+pflash0: rd_bytes=0 wr_bytes=0 rd_operations=0 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=0 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=0
+pflash1: rd_bytes=0 wr_bytes=0 rd_operations=0 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=0 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=0
+live: rd_bytes=1110693888 wr_bytes=0 rd_operations=13399 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=3453128578 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=15328504304
+target: rd_bytes=2842546688 wr_bytes=23960314368 rd_operations=47093 wr_operations=600273 flush_operations=4980 wr_total_time_ns=1969801862832 rd_total_time_ns=6686228898 flush_total_time_ns=18963098285 rd_merged=3019 wr_merged=121530 idle_time_ns=351024884630
+state: rd_bytes=20748288 wr_bytes=903446528 rd_operations=1893 wr_operations=1066 flush_operations=383 wr_total_time_ns=55269637731 rd_total_time_ns=272361434 flush_total_time_ns=8769386386 rd_merged=1267 wr_merged=130 idle_time_ns=51803105675
+ide2-cd0: rd_bytes=164 wr_bytes=0 rd_operations=8 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=10206 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=358814801286
+sd0: rd_bytes=0 wr_bytes=0 rd_operations=0 wr_operations=0 flush_operations=0 wr_total_time_ns=0 rd_total_time_ns=0 flush_total_time_ns=0 rd_merged=0 wr_merged=0 idle_time_ns=0
+(qemu) top - 18:34:18 up 1 day,  2:41,  1 user,  load average: 0.17, 0.24, 0.53
+Tasks:   1 total,   0 running,   1 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.0 us,  0.0 sy,  0.0 ni,100.0 id,  0.0 wa,  0.0 hi,  0.0 si,  0.0 st
+MiB Mem :  31885.6 total,    401.1 free,  17519.1 used,  13965.5 buff/cache
+MiB Swap:   8192.0 total,   7919.3 free,    272.7 used.  13992.6 avail Mem 
+Warning: Permanently added '[127.0.0.1]:2223' (ED25519) to the list of known hosts.

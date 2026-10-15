@@ -58,6 +58,17 @@ qemu-system-x86_64 \
 Use the newly downloaded ISO's verified path and a fresh OVMF variable store.
 The exact release ISO used here was `livegui-amd64-20260913T163055Z.iso`.
 
+## Latest full LiveGUI run: interrupted desktop merge
+
+This attempt used a disposable 100 GiB target and separate 16 GiB state disk.
+The persistent journal confirms base package and kernel commands completed,
+then records the desktop package command starting without a completion event.
+After the guest stopped responding, QEMU was reset and LiveGUI returned to KDE.
+The state disk was mounted read-only for inspection; the target's LUKS2 volume
+remains closed and no package process resumed. The captured state and exact
+limitations are in [the run folder](livegui-install-20261016/README.md).
+This run is incomplete and does not satisfy the full installation gate.
+
 ## Experimental source kernel build and encrypted boot
 
 `experimental-kernel-source-build.log.gz` is the full 102 MiB Portage output
