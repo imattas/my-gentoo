@@ -105,7 +105,7 @@ def render_storage_plan(
         ["mount", "-o", "compress=zstd:3,noatime,subvol=@home", "/dev/mapper/gentoo-root", "/mnt/gentoo/home"],
         ["mount", "-o", "compress=zstd:3,noatime,subvol=@snapshots", "/dev/mapper/gentoo-root", "/mnt/gentoo/.snapshots"],
         ["mount", "-o", "compress=zstd:3,noatime,subvol=@log", "/dev/mapper/gentoo-root", "/mnt/gentoo/var/log"],
-        ["mount", esp_part, "/mnt/gentoo/efi"],
+        ["mount", "-o", "umask=0077,noatime", esp_part, "/mnt/gentoo/efi"],
     ]
     plan = {
         "schema_version": 1,

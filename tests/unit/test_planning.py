@@ -47,6 +47,10 @@ class StoragePlanTests(unittest.TestCase):
             any(command[:3] == ["btrfs", "subvolume", "create"]
                 for command in plan["commands_for_review_only"])
         )
+        self.assertIn(
+            ["mount", "-o", "umask=0077,noatime", "/dev/disk/by-partlabel/GENTOO-ESP", "/mnt/gentoo/efi"],
+            plan["commands_for_review_only"],
+        )
         self.assertEqual(len(plan["sha256"]), 64)
 
     def test_validation_requires_backup_and_recovery_and_unchanged_device_state(self):
