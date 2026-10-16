@@ -16,11 +16,11 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - Stage 3 SHA512 and Gentoo release signatures verified; extraction completed.
 - The Gentoo repository snapshot signature verified. Configuration completed
   with profile `default/linux/amd64/23.0/desktop/plasma/systemd`.
-- The base `@world` set resolved 363 packages. The 02:09 UTC target log shows
-  packages 272–275 complete, with groff package 276 merging. The last state
-  image, captured at 01:47 UTC, still has `complete: false` and no completed
-  commands. Mesa is installed with both x86 ABIs, RadeonSI, and Vulkan. The
-  target image passed `qemu-img check`; Btrfs inspection used
+- The base `@world` set resolved 363 packages. The 02:21 UTC target log shows
+  package 283 complete and package 284 (`kde-frameworks/kf-env`) merging.
+  `gnome-base/librsvg` completed after i686 and x86_64 Rust builds. The last
+  state image (01:47 UTC) remains incomplete and is stale relative to this
+  target log. This target passed `qemu-img check`; Btrfs used
   `rescue=nologreplay`, so pending tree-log replay may be absent.
 - Point-in-time target and state copies passed `qemu-img check`. Their
   filesystems were unlocked/mounted read-only to copy emerge logs and
@@ -99,6 +99,8 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - `point-in-time-snapshot-20261016T0147Z.md` â€” latest target/state checkpoint,
 - `point-in-time-snapshot-20261016T0151Z.md` â€” base merge at package 259,
 - `point-in-time-snapshot-20261016T0209Z.md` â€” package 275 progress,
+- `point-in-time-snapshot-20261016T0221Z.md` â€” package 284, successful
+  multilib librsvg build, target image check, and stale-state warning.
   binary package merge, and outstanding boot gates.
   verified Mesa multilib metadata, and pending first-boot gates.
   Mesa USE metadata, and incomplete base merge state.
