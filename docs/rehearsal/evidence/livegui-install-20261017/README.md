@@ -16,12 +16,11 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - Stage 3 SHA512 and Gentoo release signatures verified; extraction completed.
 - The Gentoo repository snapshot signature verified. Configuration completed
   with profile `default/linux/amd64/23.0/desktop/plasma/systemd`.
-- The base `@world` set resolved 363 packages. At 02:48 UTC package 316 (`kde-plasma/plasma-activities`) was complete
-  and package 317 (`net-wireless/bluez`) was compiling. GTK+ package 299
-  completed after the 02:45 snapshot. The matching state still records the
-  363-package base command incomplete with no completed command.
+- The base `@world` set resolved 363 packages. At 02:52 UTC package 345 (`app-crypt/pinentry`) was complete and package
+  346 (`kde-frameworks/kwallet`) was merging. The matching state still records
+  the 363-package base command incomplete with no completed command.
   Systemd completed with `cryptsetup`, `kernel-install`, and `ukify` enabled.
-  The matching 02:48 UTC state copy still records the base merge incomplete with no completed package command. The target
+  The matching 02:52 UTC state copy still records the base merge incomplete with no completed package command. The target
   passed `qemu-img check`; read-only Btrfs used `rescue=nologreplay`.
 - Point-in-time target and state copies passed `qemu-img check`. Their
   filesystems were unlocked/mounted read-only to copy emerge logs and
