@@ -16,11 +16,13 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - Stage 3 SHA512 and Gentoo release signatures verified; extraction completed.
 - The Gentoo repository snapshot signature verified. Configuration completed
   with profile `default/linux/amd64/23.0/desktop/plasma/systemd`.
-- The base `@world` set resolved 363 packages. Package 251 (`media-libs/mesa`)
-  is compiling its x86_64 ABI at Ninja step 186/1708 after the 32-bit ABI
-  reached 1648/1704, including Radeon Vulkan driver compilation. The 00:11
-  UTC state checkpoint remains incomplete. The observation image passed
-  `qemu-img check`; Btrfs log inspection used `rescue=nologreplay`.
+- The base `@world` set resolved 363 packages. The target image observed at
+  01:45:53 UTC shows package 251 (`media-libs/mesa`) complete and package 252
+  (`sys-apps/util-linux`) compiling. The 01:47 UTC state image still records
+  `complete: false` and no completed commands. Installed Mesa USE metadata
+  confirms `abi_x86_32`, `abi_x86_64`, RadeonSI, and Vulkan. The target and
+  state copies both passed `qemu-img check`. Btrfs inspection used
+  `rescue=nologreplay`, so pending tree-log replay may be absent.
 - Point-in-time target and state copies passed `qemu-img check`. Their
   filesystems were unlocked/mounted read-only to copy emerge logs and
   installer state; all inspection mounts and NBD connections were removed.
@@ -93,7 +95,10 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - `point-in-time-snapshot-20261016T0045Z.md` â€” package 239 completion,
 - `point-in-time-snapshot-20261016T0057Z.md` â€” package 245 completion,
 - `point-in-time-snapshot-20261016T0115Z.md` â€” Mesa multilib compilation
-- `point-in-time-snapshot-20261016T0133Z.md` â€” Mesa ABI transition and
+- `point-in-time-snapshot-20261016T0125Z.md` â€” corrected actual capture time
+  for the Mesa ABI transition observation.
+- `point-in-time-snapshot-20261016T0147Z.md` â€” latest target/state checkpoint,
+  Mesa USE metadata, and incomplete base merge state.
   multilib progress, clean image check, and remaining boot gates.
   progress, image check, and remaining boot gates.
   package 246 build progress, clean image check, and VM liveness.
