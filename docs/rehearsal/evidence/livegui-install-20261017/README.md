@@ -16,13 +16,10 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - Stage 3 SHA512 and Gentoo release signatures verified; extraction completed.
 - The Gentoo repository snapshot signature verified. Configuration completed
   with profile `default/linux/amd64/23.0/desktop/plasma/systemd`.
-- The base `@world` set resolved 363 packages. The target image observed at
-  01:45:53 UTC shows package 251 (`media-libs/mesa`) complete and package 252
-  (`sys-apps/util-linux`) compiling. The 01:47 UTC state image still records
-  `complete: false` and no completed commands. Installed Mesa USE metadata
-  confirms `abi_x86_32`, `abi_x86_64`, RadeonSI, and Vulkan. The target and
-  state copies both passed `qemu-img check`. Btrfs inspection used
-  `rescue=nologreplay`, so pending tree-log replay may be absent.
+- The base `@world` set resolved 363 packages. The 01:51:15 UTC target
+  image shows packages 256–259 complete and package 260 (`x11-libs/libXaw`)
+  compiling. The 01:47 UTC state image remains incomplete with no completed
+  package command. Mesa installed with both x86 ABIs, RadeonSI, and Vulkan.
 - Point-in-time target and state copies passed `qemu-img check`. Their
   filesystems were unlocked/mounted read-only to copy emerge logs and
   installer state; all inspection mounts and NBD connections were removed.
@@ -98,6 +95,8 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - `point-in-time-snapshot-20261016T0125Z.md` â€” corrected actual capture time
   for the Mesa ABI transition observation.
 - `point-in-time-snapshot-20261016T0147Z.md` â€” latest target/state checkpoint,
+- `point-in-time-snapshot-20261016T0151Z.md` â€” base merge at package 259,
+  verified Mesa multilib metadata, and pending first-boot gates.
   Mesa USE metadata, and incomplete base merge state.
   multilib progress, clean image check, and remaining boot gates.
   progress, image check, and remaining boot gates.
