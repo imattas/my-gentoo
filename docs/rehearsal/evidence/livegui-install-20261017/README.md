@@ -16,12 +16,12 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - Stage 3 SHA512 and Gentoo release signatures verified; extraction completed.
 - The Gentoo repository snapshot signature verified. Configuration completed
   with profile `default/linux/amd64/23.0/desktop/plasma/systemd`.
-- The base `@world` set resolved 363 packages. The 00:19 UTC target log shows
-  package 200 (`media-libs/vulkan-loader`) complete and package 201
-  (`x11-libs/libXinerama`) merging. The nearby 00:11 UTC state snapshot still
-  has `complete: false` and no completed commands. The target's Btrfs log
-  subvolume required a read-only `rescue=nologreplay` mount, which omits pending
-  tree-log replay; that limitation is recorded with the snapshot.
+- The base `@world` set resolved 363 packages. The 00:21 UTC read-only target
+  log shows packages 206–208 complete and package 209 (`media-libs/libwebp`)
+  compiling. The nearby 00:11 UTC state snapshot still has `complete: false`
+  and no completed commands. Vulkan loader and SPIR-V Tools metadata both
+  enable `abi_x86_32` and `abi_x86_64`. The Btrfs log subvolume required
+  read-only `rescue=nologreplay`, so pending tree-log replay may be absent.
 - Point-in-time target and state copies passed `qemu-img check`. Their
   filesystems were unlocked/mounted read-only to copy emerge logs and
   installer state; all inspection mounts and NBD connections were removed.
@@ -88,6 +88,8 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - `point-in-time-snapshot-20261016T0014Z.md` â€” package progress capture.
 - `point-in-time-snapshot-20261016T0019Z.md` â€” Vulkan loader merge completion,
   package 201 progress, and VM liveness observation.
+- `point-in-time-snapshot-20261016T0021Z.md` â€” package 209 progress and
+  observed 32-bit/64-bit Vulkan loader and SPIR-V Tools ABI metadata.
 - `qemu-launch-command.txt` â€” the running headless QEMU invocation.
 
 The pre-install target copy was checked with `qemu-img check` and contained no
