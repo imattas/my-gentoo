@@ -16,12 +16,12 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - Stage 3 SHA512 and Gentoo release signatures verified; extraction completed.
 - The Gentoo repository snapshot signature verified. Configuration completed
   with profile `default/linux/amd64/23.0/desktop/plasma/systemd`.
-- The base `@world` set resolved 363 packages. The 00:04 UTC target snapshot
-  shows package 173 complete and package 174 (`dev-util/spirv-tools`) building
-  its x86_64 ABI at Ninja step 225/380; the earlier `-m32` log reached
-  step 319/380. The logs contain no scanned fatal error markers. The latest
-  installer checkpoint copy (23:40 UTC) remains incomplete, so no merge
-  completion is claimed.
+- The base `@world` set resolved 363 packages. The 00:08 UTC target log shows
+  package 174 (`dev-util/spirv-tools`) and 175 (`media-libs/opus`) completed;
+  package 176 (`net-libs/libpsl`) was merging. The same-time state snapshot
+  still has `complete: false` and no completed commands. The target's Btrfs
+  log subvolume required a read-only `rescue=nologreplay` mount, which omits
+  pending tree-log replay; that limitation is recorded with the snapshot.
 - Two point-in-time target and state copy pairs passed `qemu-img check`. Their
   filesystems were unlocked/mounted read-only to copy emerge logs and
   installer state; all inspection mounts and NBD connections were removed.
@@ -61,6 +61,11 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - `base-emerge-log-snapshot-20261016T0004Z.log` and
   `spirv-tools-build-log-snapshot-20261016T0004Z.log` — the x86_64 build
   advanced to Ninja step 225/380.
+- `base-emerge-log-snapshot-20261016T0008Z-rescue.log`,
+  `gentoo-packages-base-snapshot-20261016T0008Z.json`, and
+  `gentoo-package-events-snapshot-20261016T0008Z.jsonl` — latest target and
+  state snapshots: packages 174 and 175 completed, 176 merging, checkpoint
+  incomplete.
 - `base-progress-current.log` — QEMU block counters, active Portage process,
   and Gentoo emerge log tail captured at 23:15 UTC.
 - `live-host-observation-20261015T2326Z.md` — QEMU state and SSH identity
@@ -77,6 +82,8 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
   updated compiler progress.
 - `point-in-time-snapshot-20261016T0004Z.md` — subsequent x86_64 compiler
   progress.
+- `point-in-time-snapshot-20261016T0008Z.md` — package completion events,
+  checkpoint state, and the read-only tree-log replay limitation.
 - `qemu-launch-command.txt` — the running headless QEMU invocation.
 
 The pre-install target copy was checked with `qemu-img check` and contained no
