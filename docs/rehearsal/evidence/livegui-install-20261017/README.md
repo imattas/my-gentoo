@@ -16,11 +16,12 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - Stage 3 SHA512 and Gentoo release signatures verified; extraction completed.
 - The Gentoo repository snapshot signature verified. Configuration completed
   with profile `default/linux/amd64/23.0/desktop/plasma/systemd`.
-- The base `@world` set resolved 363 packages. At 02:42 UTC package 298
+- The base `@world` set resolved 363 packages. At 02:45 UTC package 298
   (`net-print/cups`) was complete and package 299 (`x11-libs/gtk+`) was
-  compiling; its first ABI completed and its second ABI was at step 76/1004.
+  compiling; its x86_64 build was at step 398/1004. Neither ABI completion is
+  claimed.
   Systemd completed with `cryptsetup`, `kernel-install`, and `ukify` enabled.
-  The 02:36 UTC state copy still records the base merge incomplete. The target
+  The matching 02:45 UTC state copy still records the base merge incomplete with no completed package command. The target
   passed `qemu-img check`; read-only Btrfs used `rescue=nologreplay`.
 - Point-in-time target and state copies passed `qemu-img check`. Their
   filesystems were unlocked/mounted read-only to copy emerge logs and
