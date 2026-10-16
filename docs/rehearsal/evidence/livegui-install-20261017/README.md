@@ -16,12 +16,12 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - Stage 3 SHA512 and Gentoo release signatures verified; extraction completed.
 - The Gentoo repository snapshot signature verified. Configuration completed
   with profile `default/linux/amd64/23.0/desktop/plasma/systemd`.
-- The base `@world` set resolved 363 packages. The 00:45 UTC read-only target
-  log shows package 239 (`sys-fs/cryptsetup`) complete and package 240
-  (`sys-libs/libnvme`) merging; packages 235–238 also completed. The 00:11
-  UTC installer state checkpoint remains incomplete. Vulkan loader and SPIR-V
-  Tools metadata enable both x86 ABIs. Btrfs needed `rescue=nologreplay` for
-  this read-only log view, so pending tree-log replay may be absent.
+- The base `@world` set resolved 363 packages. The 00:57 UTC read-only target
+  log shows package 245 (`net-libs/nghttp2`) complete and package 246
+  (`net-misc/curl`) compiling; GnuTLS and libmicrohttpd also completed. The
+  00:11 UTC installer state checkpoint remains incomplete. Vulkan loader and
+  SPIR-V Tools metadata enable both x86 ABIs. Btrfs required
+  `rescue=nologreplay`; pending tree-log replay may be absent.
 - Point-in-time target and state copies passed `qemu-img check`. Their
   filesystems were unlocked/mounted read-only to copy emerge logs and
   installer state; all inspection mounts and NBD connections were removed.
@@ -92,6 +92,8 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
   observed 32-bit/64-bit Vulkan loader and SPIR-V Tools ABI metadata.
 - `point-in-time-snapshot-20261016T0025Z.md` â€” packages 209–210 completion,
 - `point-in-time-snapshot-20261016T0045Z.md` â€” package 239 completion,
+- `point-in-time-snapshot-20261016T0057Z.md` â€” package 245 completion,
+  package 246 build progress, clean image check, and VM liveness.
   package 240 progress, image integrity, and QEMU liveness.
   package 211 build progress, clean image check, and error scan.
 - `qemu-launch-command.txt` â€” the running headless QEMU invocation.
