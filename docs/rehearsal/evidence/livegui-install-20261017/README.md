@@ -16,12 +16,12 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
 - Stage 3 SHA512 and Gentoo release signatures verified; extraction completed.
 - The Gentoo repository snapshot signature verified. Configuration completed
   with profile `default/linux/amd64/23.0/desktop/plasma/systemd`.
-- The base `@world` set resolved 363 packages. The 00:21 UTC read-only target
-  log shows packages 206–208 complete and package 209 (`media-libs/libwebp`)
-  compiling. The nearby 00:11 UTC state snapshot still has `complete: false`
-  and no completed commands. Vulkan loader and SPIR-V Tools metadata both
-  enable `abi_x86_32` and `abi_x86_64`. The Btrfs log subvolume required
-  read-only `rescue=nologreplay`, so pending tree-log replay may be absent.
+- The base `@world` set resolved 363 packages. The 00:25 UTC read-only target
+  log shows packages 209 and 210 complete and package 211 (`dev-util/glslang`)
+  compiling. A nearby 00:11 UTC state snapshot remains incomplete. Vulkan loader
+  and SPIR-V Tools metadata enable `abi_x86_32` and `abi_x86_64`. Btrfs required
+  `rescue=nologreplay` for this read-only log view; pending tree-log replay may
+  be absent.
 - Point-in-time target and state copies passed `qemu-img check`. Their
   filesystems were unlocked/mounted read-only to copy emerge logs and
   installer state; all inspection mounts and NBD connections were removed.
@@ -90,6 +90,8 @@ this VM. Only virtual disks are attached; the Gentoo LiveGUI ISO is read-only.
   package 201 progress, and VM liveness observation.
 - `point-in-time-snapshot-20261016T0021Z.md` â€” package 209 progress and
   observed 32-bit/64-bit Vulkan loader and SPIR-V Tools ABI metadata.
+- `point-in-time-snapshot-20261016T0025Z.md` â€” packages 209–210 completion,
+  package 211 build progress, clean image check, and error scan.
 - `qemu-launch-command.txt` â€” the running headless QEMU invocation.
 
 The pre-install target copy was checked with `qemu-img check` and contained no
